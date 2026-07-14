@@ -1,11 +1,11 @@
-// import Navbar from "../components/layout/Navbar";
+import Navbar from "../components/layout/Navbar";
 // import Hero from "../components/hero/Hero";
 
 function Home() {
   return (
     <>
-      {/* <Navbar />
-      <Hero /> */}
+      <Navbar cartCount={0} />
+      {/* <Hero /> */}
     </>
   );
 }
