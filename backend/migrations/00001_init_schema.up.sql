@@ -103,7 +103,7 @@ CREATE TABLE
   );
 
 CREATE Table
-  payments (
+  Payments (
     payment_id UUID PRIMARY KEY,
     order_id UUID REFERENCES Orders (order_id) ON DELETE CASCADE,
     amount NUMERIC(10, 2) NOT NULL,
