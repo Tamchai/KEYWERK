@@ -17,14 +17,23 @@ func NewBrandRepository(db *sqlx.DB) ports.BrandRepository {
 	return &brandRepository{db}
 }
 
-// 1. Create: บันทึกแบรนด์ใหม่ลงฐานข้อมูล
 func (r *brandRepository) Save(brand core.Brand) error {
 	query := `INSERT INTO brands (brand_id, name) VALUES ($1, $2)`
 
-	_, err := r.db.Exec(query, brand.ID, brand.Name)
+	result, err := r.db.Exec(query, brand.ID, brand.Name)
 	if err != nil {
 		return err
 	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected <= 0 {
+		return errors.New("cannot insert brand")
+	}
+
 	return nil
 }
 

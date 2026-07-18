@@ -8,5 +8,6 @@ type BrandRepository interface {
 	FindAll() ([]core.Brand, error)
 	Update(id string, brand core.Brand) error
 	Delete(id string) error
+
 	IsBrandNameExists(name string) (bool, error)
 }

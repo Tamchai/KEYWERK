@@ -40,7 +40,7 @@ func (r *categoryRepository) Get() ([]core.Category, error) {
 }
 
 func (r *categoryRepository) Update(categoryID string, category core.Category) error {
-	query := `UPDATE categories SET (name = $1) WHERE category_id = $2`
+	query := `UPDATE categories SET name = $1 WHERE category_id = $2`
 	result, err := r.db.Exec(query, category.Name, category.ID)
 
 	if err != nil {
@@ -61,7 +61,7 @@ func (r *categoryRepository) Update(categoryID string, category core.Category) e
 
 func (r *categoryRepository) Delete(categoryID string) error {
 
-	query := `DELETE FROM categories WHERE category_id = $2`
+	query := `DELETE FROM categories WHERE category_id = $1`
 	result, err := r.db.Exec(query, categoryID)
 
 	if err != nil {

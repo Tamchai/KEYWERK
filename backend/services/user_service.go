@@ -35,7 +35,7 @@ func (s *userService) Register(registerReq core.RegisterReq) error {
 	}
 
 	if found {
-		return errors.New("email already exists")
+		return core.NewBadRequestError("email already exists")
 	}
 
 	hashPassword, err := bcrypt.GenerateFromPassword([]byte(registerReq.Password), 10)
@@ -69,12 +69,12 @@ func (s *userService) Login(loginReq core.LoginReq) (string, error) {
 	}
 
 	if !found {
-		return "", errors.New("invalid email or password")
+		return "", core.NewBadRequestError("invalid email or password")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginReq.Password))
 	if err != nil {
-		return "", errors.New("invalid email or password")
+		return "", core.NewBadRequestError("invalid email or password")
 	}
 
 	claims := jwt.MapClaims{

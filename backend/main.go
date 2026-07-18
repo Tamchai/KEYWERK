@@ -10,6 +10,7 @@ import (
 	"github.com/MaKo114/KEYWERK/middlewares"
 	"github.com/MaKo114/KEYWERK/services"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -26,6 +27,11 @@ func main() {
 
 	app := fiber.New()
 
+	app.Use(cors.New(cors.Config{
+		AllowMethods: "*",
+		AllowOrigins: "http://localhost:5173",
+	}))
+
 	userRepo := adapters.NewUserRepository(db)
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
@@ -37,6 +43,18 @@ func main() {
 	brandRepo := adapters.NewBrandRepository(db)
 	brandService := services.NewBrandService(brandRepo)
 	brandHandler := handlers.NewBrandHandler(brandService)
+
+	productRepo := adapters.NewProductRepository(db)
+	productService := services.NewProductService(productRepo)
+	productHandler := handlers.NewProductHandler(productService)
+
+	pvRepo := adapters.NewProductVariantRepository(db)
+	pvService := services.NewProductVariantService(pvRepo)
+	pvHandler := handlers.NewProductVariantHandler(pvService)
+
+	addressRepo := adapters.NewAddressRepository(db)
+	addressService := services.NewAddressService(addressRepo)
+	addressHandler := handlers.NewAddressHandler(addressService)
 
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
@@ -53,6 +71,21 @@ func main() {
 	brandRoute.Post("/", middlewares.AuthMiddleware(), middlewares.CheckAdminRole(), brandHandler.CreateBrand)
 	brandRoute.Put("/:id", middlewares.AuthMiddleware(), middlewares.CheckAdminRole(), brandHandler.UpdateBrand)
 	brandRoute.Delete("/:id", middlewares.AuthMiddleware(), middlewares.CheckAdminRole(), brandHandler.DeleteBrand)
+
+	productRoute := app.Group("/products")
+	productRoute.Get("/", productHandler.GetAllProducts)
+	productRoute.Get(":productId/variants", pvHandler.GetVariantsByProductID)
+
+	pvRoute := app.Group("/variants")
+	pvRoute.Get("/:id", pvHandler.GetVariantByID)
+	// pvRoute.Get("/:productId", pvHandler.GetVariantsByProductID)
+	pvRoute.Post("/", middlewares.AuthMiddleware(), middlewares.CheckAdminRole(), pvHandler.CreateVariant)
+
+	addressRoute := app.Group("/address")
+	addressRoute.Post("/", middlewares.AuthMiddleware(), addressHandler.SaveAddress)
+	addressRoute.Get("/", middlewares.AuthMiddleware(), addressHandler.GetAddresses)
+	addressRoute.Put("/:address_id", middlewares.AuthMiddleware(), addressHandler.UpdateAddress)
+	addressRoute.Delete("/:address_id", middlewares.AuthMiddleware(), addressHandler.DeleteAddress)
 
 	app.Listen(":8000")
 

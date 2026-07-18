@@ -51,9 +51,14 @@ func (s *categoryService) UpdateCategory(categoryID string, reqCategory core.Req
 	return s.categoryRepo.Update(categoryID, category)
 }
 
-func (s *categoryService) DeleteCategory(categoryID string) (err error) {
+func (s *categoryService) DeleteCategory(categoryID string) error {
 
-	return s.categoryRepo.Delete(categoryID)
+	err := s.categoryRepo.Delete(categoryID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *categoryService) SaveCategory(reqCategory core.ReqCategory) (err error) {

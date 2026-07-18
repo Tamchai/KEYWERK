@@ -83,6 +83,7 @@ func (h *categoryHandler) SaveCategory(c *fiber.Ctx) error {
 func (h *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
 
 	id := c.Params("category_id")
+
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid category id"})
 	}
