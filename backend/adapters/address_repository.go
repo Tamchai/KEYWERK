@@ -196,3 +196,41 @@ func (r *addressRepository) ClearDefault(userID string) error {
 	_, err := r.db.Exec(query, userID)
 	return err
 }
+
+func (r *addressRepository) GetAddresIsDefault(userId string) (*core.Address, error) {
+	var address core.Address
+
+	query := `select address_id, 
+		user_id, 
+		title, 
+		receiver_name, 
+		phone_number, 
+		address_line1, 
+		address_line2, 
+		district, 
+		province, 
+		postal_code, 
+		is_default, 
+		created_at  from addresses where user_id = $1 and is_default is true`
+
+	err := r.db.QueryRow(query, userId).Scan(
+		&address.ID,
+		&address.UserID,
+		&address.Title,
+		&address.ReceiverName,
+		&address.PhoneNumber,
+		&address.AddressLine1,
+		&address.AddressLine2,
+		&address.District,
+		&address.Province,
+		&address.PostalCode,
+		&address.IsDefault,
+		&address.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &address, nil
+}

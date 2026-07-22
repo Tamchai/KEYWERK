@@ -1,6 +1,9 @@
 package ports
 
-import "github.com/MaKo114/KEYWERK/core"
+import (
+	"github.com/MaKo114/KEYWERK/core"
+	"github.com/jmoiron/sqlx"
+)
 
 type ProductVariantRepository interface {
 	SaveVariant(variant *core.ProductVariant) error
@@ -9,4 +12,5 @@ type ProductVariantRepository interface {
 
 	FindByVariantID(id string) (*core.ProductVariant, error)
 	FindVariantByProductID(productID string) ([]core.ProductVariant, error)
+	UpdateStock(Tx *sqlx.Tx, variantID string, stock int) error
 }

@@ -8,4 +8,6 @@ type AddressRepository interface {
 	Update(addr *core.Address, userID string) error
 	Delete(addressID, userID string) error
 	ClearDefault(userID string) error
+
+	GetAddresIsDefault(userId string) (*core.Address, error)
 }

@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/MaKo114/KEYWERK/core"
 	"github.com/MaKo114/KEYWERK/ports"
@@ -101,4 +102,30 @@ func (r *productVariantRepository) FindVariantByProductID(productID string) ([]c
 	}
 
 	return variants, nil
+}
+
+func (r *productVariantRepository) UpdateStock(tx *sqlx.Tx, variantID string, quantity int) error {
+	query := `
+		UPDATE productvariants 
+		SET stock = stock + $1 
+		WHERE variant_id = $2 AND (stock + $1) >= 0
+	`
+
+	result, err := tx.Exec(query, quantity, variantID)
+	if err != nil {
+		return err
+	}
+
+	// เช็กว่ามีแถวถูกอัปเดตจริงไหม
+	// ถ้า rowsAffected == 0 แปลว่าไม่พบ variantID หรือ สต็อกไม่พอให้ตัด (ติดเงื่อนไข stock + $1 >= 0)
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("failed to update stock: variant not found or insufficient stock")
+	}
+
+	return nil
 }

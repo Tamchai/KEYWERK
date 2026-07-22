@@ -1,0 +1,12 @@
+ALTER TABLE orders
+DROP COLUMN shipping_address;
+
+ALTER TABLE orders
+ADD COLUMN receiver_name VARCHAR(255),
+ADD COLUMN phone_number VARCHAR(20),
+ADD COLUMN address_line1 VARCHAR(255),
+ADD COLUMN address_line2 VARCHAR(255),
+ADD COLUMN district VARCHAR(255),
+ADD COLUMN province VARCHAR(255),
+ADD COLUMN postal_code VARCHAR(10);
+ADD COLUMN updated_at TIMESTAMP;

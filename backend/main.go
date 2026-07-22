@@ -56,6 +56,23 @@ func main() {
 	addressService := services.NewAddressService(addressRepo)
 	addressHandler := handlers.NewAddressHandler(addressService)
 
+	cartItemRepo := adapters.NewCartItemRepository(db)
+
+	cartRepo := adapters.NewCartRepository(db)
+	cartService := services.NewCartService(cartRepo, cartItemRepo)
+	cartHandler := handlers.NewCartHandler(cartService)
+
+	paymentRepo := adapters.NewPaymentRepository(db)
+
+	orderItemRepo := adapters.NewOrderItemRepository(db)
+
+	orderRepo := adapters.NewOrderRepository(db)
+	orderService := services.NewOrderService(db, paymentRepo, addressRepo, pvRepo, cartRepo, cartItemRepo, orderRepo, orderItemRepo)
+	orderHandler := handlers.NewOrderHandler(orderService)
+
+	paymentService := services.NewPaymentService(db, paymentRepo, orderRepo)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
+
 	app.Post("/register", userHandler.Register)
 	app.Post("/login", userHandler.Login)
 
@@ -86,6 +103,17 @@ func main() {
 	addressRoute.Get("/", middlewares.AuthMiddleware(), addressHandler.GetAddresses)
 	addressRoute.Put("/:address_id", middlewares.AuthMiddleware(), addressHandler.UpdateAddress)
 	addressRoute.Delete("/:address_id", middlewares.AuthMiddleware(), addressHandler.DeleteAddress)
+
+	cartRoute := app.Group("/carts")
+	cartRoute.Post("/", middlewares.AuthMiddleware(), cartHandler.AddItemToCart)
+	cartRoute.Get("/", middlewares.AuthMiddleware(), cartHandler.GetItems)
+	cartRoute.Delete("/", middlewares.AuthMiddleware(), cartHandler.DeleteItemToCart)
+
+	orderRoute := app.Group("/orders", middlewares.AuthMiddleware())
+	orderRoute.Post("/", orderHandler.Checkout)
+
+	paymentRoute := app.Group("/payments", middlewares.AuthMiddleware())
+	paymentRoute.Post("/", paymentHandler.Paid)
 
 	app.Listen(":8000")
 

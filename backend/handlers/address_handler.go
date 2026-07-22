@@ -3,8 +3,8 @@ package handlers
 import (
 	"github.com/MaKo114/KEYWERK/core"
 	"github.com/MaKo114/KEYWERK/services"
+	"github.com/MaKo114/KEYWERK/utils"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type AddressHandler interface {
@@ -22,18 +22,8 @@ func NewAddressHandler(addressService services.AddressService) AddressHandler {
 	return &addressHandler{addressService: addressService}
 }
 
-func (h *addressHandler) getUserID(c *fiber.Ctx) (string, error) {
-	user := c.Locals("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(string)
-	if !ok {
-		return "", fiber.NewError(fiber.StatusUnauthorized, "unauthorized")
-	}
-	return userID, nil
-}
-
 func (h *addressHandler) SaveAddress(c *fiber.Ctx) error {
-	userID, err := h.getUserID(c)
+	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
 	}
@@ -53,7 +43,7 @@ func (h *addressHandler) SaveAddress(c *fiber.Ctx) error {
 }
 
 func (h *addressHandler) GetAddresses(c *fiber.Ctx) error {
-	userID, err := h.getUserID(c)
+	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
 	}
@@ -67,7 +57,7 @@ func (h *addressHandler) GetAddresses(c *fiber.Ctx) error {
 }
 
 func (h *addressHandler) UpdateAddress(c *fiber.Ctx) error {
-	userID, err := h.getUserID(c)
+	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
 	}
@@ -90,7 +80,7 @@ func (h *addressHandler) UpdateAddress(c *fiber.Ctx) error {
 }
 
 func (h *addressHandler) DeleteAddress(c *fiber.Ctx) error {
-	userID, err := h.getUserID(c)
+	userID, err := utils.GetUserID(c)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
 	}
