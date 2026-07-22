@@ -1,11 +1,17 @@
 import Navbar from "../components/layout/Navbar";
-// import Hero from "../components/hero/Hero";
+import Hero from "../components/hero/Hero";
+import CategorySection from "../components/categories/CategorySection";
+import BestSellers from "../components/products/BestSellers";
+import Footer from "../components/layout/Footer";
 
 function Home() {
   return (
     <>
-      <Navbar cartCount={0} />
-      {/* <Hero /> */}
+      <Navbar/>
+      <Hero />
+      <CategorySection />
+      <BestSellers />
+      <Footer />
     </>
   );
 }

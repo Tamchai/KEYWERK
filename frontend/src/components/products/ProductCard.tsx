@@ -1,0 +1,91 @@
+interface ProductCardProps {
+  image: string;
+  category: string;
+  name: string;
+  price: string;
+  href: string;
+}
+
+export const ProductCard = ({ image, category, name, price, href }: ProductCardProps) => (
+  <a
+    href={href}
+    style={{
+      display: "flex",
+      flexDirection: "column",
+      textDecoration: "none",
+      borderRadius: 12,
+      overflow: "hidden",
+      background: "var(--surface)",
+      border: "1px solid var(--line)",
+      transition: "border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease",
+    }}
+    onMouseEnter={(e) => {
+      const el = e.currentTarget as HTMLElement;
+      el.style.borderColor = "var(--accent)";
+      el.style.transform = "translateY(-2px)";
+      el.style.boxShadow = "0 8px 20px rgba(0,0,0,.35)";
+    }}
+    onMouseLeave={(e) => {
+      const el = e.currentTarget as HTMLElement;
+      el.style.borderColor = "var(--line)";
+      el.style.transform = "translateY(0)";
+      el.style.boxShadow = "none";
+    }}
+  >
+    <div
+      style={{
+        width: "100%",
+        aspectRatio: "1 / 1",
+        background: "#0a0906",
+        overflow: "hidden",
+      }}
+    >
+      <img
+        src={image}
+        alt={name}
+        style={{
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+        }}
+      />
+    </div>
+
+    <div style={{ padding: "16px 18px 20px" }}>
+      <p
+        style={{
+          margin: "0 0 6px",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 11.5,
+          color: "var(--text-dim)",
+        }}
+      >
+        {category}
+      </p>
+      <h3
+        style={{
+          margin: "0 0 8px",
+          fontFamily: "'JetBrains Mono', monospace",
+          fontWeight: 700,
+          fontSize: 15,
+          color: "var(--text)",
+        }}
+      >
+        {name}
+      </h3>
+      <p
+        style={{
+          margin: 0,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontWeight: 700,
+          fontSize: 15,
+          color: "var(--accent)",
+        }}
+      >
+        {price}
+      </p>
+    </div>
+  </a>
+);
+
+export default ProductCard;

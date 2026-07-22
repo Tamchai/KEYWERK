@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,10 +18,10 @@ interface DropdownItem {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavItem[] = [
-  { label: "Home", href: "#", active: true },
-  { label: "Switch", href: "#switches" },
-  { label: "Keycaps", href: "#keycaps" },
-  { label: "Contact", href: "#contact" },
+  { label: "Home", href: "/", active: true },
+  { label: "Switch", href: "/switches" },
+  { label: "Keycaps", href: "/keycaps" },
+  { label: "About", href: "/about" },
 ];
 
 const KEYBOARD_ITEMS: DropdownItem[] = [
@@ -42,7 +43,14 @@ const QUICK_LINKS = [
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 const IconSearch = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    style={{ width: "100%", height: "100%" }}
+  >
     <circle cx="11" cy="11" r="7" />
     <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
@@ -88,7 +96,6 @@ const KeyboardDropdown = () => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -131,7 +138,6 @@ const KeyboardDropdown = () => {
         <IconChevron open={open} />
       </button>
 
-      {/* Dropdown panel */}
       <div
         role="menu"
         style={{
@@ -213,10 +219,6 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (e.key === "/" && document.activeElement !== inputRef.current) {
-        e.preventDefault();
-        // signal parent to open — parent handles this
-      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -397,8 +399,8 @@ interface NavbarProps {
 
 export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
+  const { pathname } = useLocation();
 
-  // Open search on "/" key
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "/" && document.activeElement?.tagName !== "INPUT") {
@@ -417,6 +419,9 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
           position: "sticky",
           top: 0,
           zIndex: 50,
+          width: "100vw",
+          marginLeft: "calc(50% - 50vw)",
+          marginRight: "calc(50% - 50vw)",
           background: "rgba(17,15,10,0.92)",
           backdropFilter: "blur(8px)",
           WebkitBackdropFilter: "blur(8px)",
@@ -424,22 +429,19 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
         }}
       >
         <nav
-            style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-
-                padding: "16px clamp(20px, 5vw, 64px)",
-
-                gap: 24,
-
-                boxSizing: "border-box",
-            }}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px clamp(20px, 5vw, 64px)",
+            gap: 24,
+            boxSizing: "border-box",
+          }}
         >
           {/* Logo */}
-          <a
-            href="#"
+          <Link
+            to="/"
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontWeight: 800,
@@ -452,7 +454,6 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               textDecoration: "none",
             }}
           >
-            {/* Keyboard icon — matches screenshot: amber keys on dark body */}
             <svg
               width="20"
               height="20"
@@ -461,75 +462,70 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               xmlns="http://www.w3.org/2000/svg"
               style={{ flexShrink: 0 }}
             >
-              {/* Body */}
               <rect x="0.75" y="3.75" width="18.5" height="12.5" rx="2.25" fill="#2c2820" stroke="#3a352b" strokeWidth="1" />
-              {/* Row 1 — 5 keys */}
               <rect x="2.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="5.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="8.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="11.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="14.5" y="5.5" width="3" height="2" rx="0.5" fill="#e8b923" />
-              {/* Row 2 — 5 keys */}
               <rect x="2.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="5.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="8.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="11.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="14.5" y="8.25" width="3" height="2" rx="0.5" fill="#e8b923" />
-              {/* Row 3 — spacebar */}
               <rect x="2.5" y="11" width="15" height="2" rx="0.5" fill="#e8b923" />
             </svg>
             KEYWERK
-          </a>
+          </Link>
 
           {/* Nav links */}
           <div
             style={{
-                flex: 1,
-
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-
-                gap: "clamp(18px,2vw,42px)",
-
-                minWidth: 0,
-
-                fontSize: 14,
+              flex: 1,
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: "clamp(18px,2vw,42px)",
+              minWidth: 0,
+              fontSize: 14,
             }}
           >
-            {NAV_LINKS.slice(0, 1).map((link) => (
-              <a
-                key={link.href + link.label}
-                href={link.href}
-                style={{
-                  color: link.active ? "var(--accent)" : "var(--text-dim)",
-                  textDecoration: "none",
-                  transition: "color 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {link.label}
-              </a>
-            ))}
+            {/* Home */}
+            <Link
+              to="/"
+              style={{
+                color: pathname === "/" ? "#e8b923" : "var(--text-dim)",
+                textDecoration: "none",
+                transition: "color 0.15s",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = pathname === "/" ? "#e8b923" : "var(--text)")}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = pathname === "/" ? "#e8b923" : "var(--text-dim)")}
+            >
+              Home
+            </Link>
 
             <KeyboardDropdown />
 
-            {NAV_LINKS.slice(1).map((link) => (
-              <a
-                key={link.href + link.label}
-                href={link.href}
-                style={{
-                  color: "var(--text-dim)",
-                  textDecoration: "none",
-                  transition: "color 0.15s",
-                  whiteSpace: "nowrap",
-                }}
-                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text)")}
-                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
-              >
-                {link.label}
-              </a>
-            ))}
+            {NAV_LINKS.slice(1).map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  style={{
+                    color: isActive ? "#e8b923" : "var(--text-dim)",
+                    textDecoration: "none",
+                    transition: "color 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = isActive ? "#e8b923" : "var(--text)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = isActive ? "#e8b923" : "var(--text-dim)")}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Icon buttons */}
@@ -548,8 +544,8 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 19,
-                height: 19,
+                width: 32,
+                height: 32,
                 transition: "color 0.15s, transform 0.1s",
               }}
               onMouseEnter={(e) => {
@@ -576,8 +572,8 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 19,
-                height: 19,
+                width: 32,
+                height: 32,
                 transition: "color 0.15s, transform 0.1s",
               }}
               onMouseEnter={(e) => {
@@ -605,8 +601,8 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: 19,
-                height: 19,
+                width: 32,
+                height: 32,
                 transition: "color 0.15s, transform 0.1s",
               }}
               onMouseEnter={(e) => {
