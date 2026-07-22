@@ -54,7 +54,7 @@ func (h *userHandler) Login(c *fiber.Ctx) error {
 
 	token, err := h.userService.Login(req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "login unsuccess"})
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": err.Error()})
 	}
 
 	return c.Status(200).JSON(fiber.Map{
