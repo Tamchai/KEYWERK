@@ -1,12 +1,14 @@
 interface ProductCardProps {
   image: string;
   category: string;
+  brand?: string;
   name: string;
   price: string;
   href: string;
 }
 
-export const ProductCard = ({ image, category, name, price, href }: ProductCardProps) => (
+export const ProductCard = ({ image, category, brand, name, price, href }: ProductCardProps) => (
+  
   <a
     href={href}
     style={{
@@ -32,12 +34,16 @@ export const ProductCard = ({ image, category, name, price, href }: ProductCardP
       el.style.boxShadow = "none";
     }}
   >
+    {/* พื้นที่ใส่รูป */}
     <div
       style={{
         width: "100%",
         aspectRatio: "1 / 1",
         background: "#0a0906",
         overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
       <img
@@ -52,6 +58,23 @@ export const ProductCard = ({ image, category, name, price, href }: ProductCardP
     </div>
 
     <div style={{ padding: "16px 18px 20px" }}>
+      {/* ยี่ห้อ — ตัวเล็ก ตัวพิมพ์ใหญ่ทั้งหมด */}
+      {brand && (
+        <p
+          style={{
+            margin: "0 0 6px",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontWeight: 700,
+            fontSize: 10.5,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--accent)",
+          }}
+        >
+          {brand}
+        </p>
+      )}
+
       <p
         style={{
           margin: "0 0 6px",
@@ -62,6 +85,7 @@ export const ProductCard = ({ image, category, name, price, href }: ProductCardP
       >
         {category}
       </p>
+
       <h3
         style={{
           margin: "0 0 8px",
@@ -69,10 +93,12 @@ export const ProductCard = ({ image, category, name, price, href }: ProductCardP
           fontWeight: 700,
           fontSize: 15,
           color: "var(--text)",
+          lineHeight: 1.35,
         }}
       >
         {name}
       </h3>
+
       <p
         style={{
           margin: 0,

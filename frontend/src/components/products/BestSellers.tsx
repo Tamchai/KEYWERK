@@ -7,7 +7,7 @@ import razerImg from "../../assets/Razer_BlackWidow_V4_X.png";
 const PRODUCTS = [
   {
     image: keychronImg,
-    category: "75% Mechanical",
+    category: "75% Mechanical", 
     name: "Keychron V1 Max",
     price: "฿3,300",
     href: "#keychron-v1-max",

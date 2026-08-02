@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface NavItem {
   label: string;
   href: string;
-  active?: boolean;
 }
 
 interface DropdownItem {
@@ -18,39 +18,31 @@ interface DropdownItem {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavItem[] = [
-  { label: "Home", href: "/", active: true },
   { label: "Switch", href: "/switches" },
   { label: "Keycaps", href: "/keycaps" },
+  { label: "Accessories", href: "/accessories" },
   { label: "About", href: "/about" },
 ];
 
 const KEYBOARD_ITEMS: DropdownItem[] = [
-  { emoji: "⌨️", label: "Mechanical", href: "#mechanical" },
-  { emoji: "🧲", label: "Magnetic", href: "#magnetic" },
-  { emoji: "🧩", label: "Custom", href: "#custom" },
+  { emoji: "⌨️", label: "Mechanical", href: "/keyboard#mechanical" },
+  { emoji: "🧲", label: "Magnetic", href: "/keyboard#magnetic" },
+  { emoji: "🧩", label: "Custom", href: "/keyboard#custom" },
 ];
 
 const SEARCH_CHIPS = ["Gateron Yellow", "Hot-swap", "75% layout", "Wireless tri-mode", "PBT keycap"];
 
 const QUICK_LINKS = [
-  { emoji: "⌨️", label: "Mechanical Keyboard", href: "#mechanical" },
-  { emoji: "🧲", label: "Magnetic Keyboard", href: "#magnetic" },
-  { emoji: "🧩", label: "Custom Keyboard", href: "#custom" },
-  { emoji: "🔘", label: "Switch", href: "#switches" },
-  { emoji: "🔤", label: "Keycaps", href: "#keycaps" },
+  { emoji: "⌨️", label: "Mechanical Keyboard", href: "/keyboard" },
+  { emoji: "🧩", label: "Custom Keyboard", href: "/keyboard#custom" },
+  { emoji: "🔘", label: "Switch", href: "/switches" },
+  { emoji: "🔤", label: "Keycaps", href: "/keycaps" },
 ];
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
 const IconSearch = () => (
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    style={{ width: "100%", height: "100%" }}
-  >
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" style={{ width: "100%", height: "100%" }}>
     <circle cx="11" cy="11" r="7" />
     <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
@@ -91,10 +83,15 @@ const IconChevron = ({ open }: { open: boolean }) => (
 );
 
 // ─── KeyboardDropdown ─────────────────────────────────────────────────────────
+// ปรับ: ตัวข้อความ "Keyboard" กดแล้วไปหน้า /keyboard ได้จริง
+// ส่วน chevron แยกเป็นปุ่มกดเปิด/ปิด dropdown ต่างหาก (สำหรับ mobile/touch ที่ hover ไม่ทำงาน)
 
 const KeyboardDropdown = () => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { pathname } = useLocation();
+  const isActive = pathname.startsWith("/keyboard");
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -106,47 +103,74 @@ const KeyboardDropdown = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // ยกเลิก timer ที่ค้างไว้ตอน unmount กัน memory leak
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
+
+  const openMenu = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpen(true);
+  };
+
+  // หน่วงเวลาก่อนปิด แทนที่จะปิดทันที — ให้เวลาผู้ใช้ขยับเมาส์ข้ามช่องว่างไป dropdown
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 200);
+  };
+
   return (
     <div
       ref={ref}
-      style={{ position: "relative" }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      style={{ position: "relative", display: "flex", alignItems: "center", gap: 4 }}
+      onMouseEnter={openMenu}
+      onMouseLeave={scheduleClose}
     >
+      <Link
+        to="/keyboard"
+        style={{
+          color: isActive ? "var(--accent)" : "var(--text-dim)",
+          textDecoration: "none",
+          fontSize: 13.5,
+          transition: "color 0.15s",
+        }}
+        onMouseEnter={(e) => !isActive && ((e.currentTarget as HTMLElement).style.color = "var(--text)")}
+        onMouseLeave={(e) => !isActive && ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+      >
+        Keyboard
+      </Link>
+
       <button
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
+        aria-label="เปิดเมนูย่อยคีย์บอร์ด"
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 5,
           background: "none",
           border: "none",
           cursor: "pointer",
           color: "var(--text-dim)",
-          fontFamily: "'Inter', sans-serif",
-          fontSize: 13.5,
-          padding: 0,
-          transition: "color 0.15s",
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={(e) => {
-          if (!ref.current?.contains(e.relatedTarget as Node)) setOpen(false);
+          padding: 2,
         }}
       >
-        Keyboard
         <IconChevron open={open} />
       </button>
 
+      {/* Dropdown panel */}
       <div
         role="menu"
+        onMouseEnter={openMenu}
+        onMouseLeave={scheduleClose}
         style={{
           position: "absolute",
           top: "100%",
           left: "50%",
-          transform: open
-            ? "translateX(-50%) translateY(0)"
-            : "translateX(-50%) translateY(6px)",
+          transform: open ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(6px)",
           background: "var(--surface)",
           border: "1px solid var(--line)",
           borderRadius: 8,
@@ -162,10 +186,11 @@ const KeyboardDropdown = () => {
         }}
       >
         {KEYBOARD_ITEMS.map((item) => (
-          <a
+          <Link
             key={item.href}
-            href={item.href}
+            to={item.href}
             role="menuitem"
+            onClick={() => setOpen(false)}
             style={{
               display: "flex",
               alignItems: "center",
@@ -188,7 +213,7 @@ const KeyboardDropdown = () => {
           >
             <span style={{ fontSize: 14 }}>{item.emoji}</span>
             {item.label}
-          </a>
+          </Link>
         ))}
       </div>
     </div>
@@ -196,6 +221,7 @@ const KeyboardDropdown = () => {
 };
 
 // ─── SearchPanel ──────────────────────────────────────────────────────────────
+// ปรับ: กด Enter หรือคลิก chip แล้วค้นหาได้จริง (navigate ไป /search?q=...)
 
 interface SearchPanelProps {
   open: boolean;
@@ -205,6 +231,7 @@ interface SearchPanelProps {
 const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -224,9 +251,20 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  const runSearch = (term: string) => {
+    const trimmed = term.trim();
+    if (!trimmed) return;
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    onClose();
+    setQuery("");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") runSearch(query);
+  };
+
   return (
     <>
-      {/* Scrim */}
       <div
         onClick={onClose}
         style={{
@@ -240,7 +278,6 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
         }}
       />
 
-      {/* Panel */}
       <div
         style={{
           position: "fixed",
@@ -256,7 +293,6 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
         }}
       >
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
-          {/* Search row */}
           <div
             style={{
               display: "flex",
@@ -274,6 +310,7 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
               placeholder="ค้นหาคีย์บอร์ด, switch, keycap..."
               style={{
                 flex: 1,
@@ -286,6 +323,23 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
                 caretColor: "var(--accent)",
               }}
             />
+            <button
+              onClick={() => runSearch(query)}
+              style={{
+                background: "var(--accent)",
+                border: "none",
+                color: "#1c1810",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontWeight: 700,
+                fontSize: 12,
+                padding: "8px 14px",
+                borderRadius: 6,
+                cursor: "pointer",
+                flexShrink: 0,
+              }}
+            >
+              ค้นหา
+            </button>
             <button
               onClick={onClose}
               style={{
@@ -304,7 +358,6 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
             </button>
           </div>
 
-          {/* Suggestions */}
           <div style={{ marginTop: 22 }}>
             <p
               style={{
@@ -322,10 +375,7 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
               {SEARCH_CHIPS.map((chip) => (
                 <button
                   key={chip}
-                  onClick={() => {
-                    setQuery(chip);
-                    inputRef.current?.focus();
-                  }}
+                  onClick={() => runSearch(chip)}
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 12.5,
@@ -365,9 +415,10 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
             </p>
             <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
               {QUICK_LINKS.map((link) => (
-                <a
+                <Link
                   key={link.href + link.label}
-                  href={link.href}
+                  to={link.href}
+                  onClick={onClose}
                   style={{
                     fontSize: 13.5,
                     color: "var(--text-dim)",
@@ -381,7 +432,7 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
                   onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
                 >
                   {link.emoji} {link.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -400,6 +451,8 @@ interface NavbarProps {
 export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { isLoggedIn } = useAuth();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -411,6 +464,20 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, []);
+
+  // User icon: login แล้วไป /profile, ยังไม่ login ไป /login
+  const handleUserClick = () => {
+    navigate(isLoggedIn ? "/profile" : "/login");
+  };
+
+  // Cart icon: ต้อง login ก่อนถึงเข้าได้ ไม่งั้นเด้งไป /login (พร้อมจดจำว่าจะกลับมาที่ /cart)
+  const handleCartClick = () => {
+    if (isLoggedIn) {
+      navigate("/cart");
+    } else {
+      navigate("/login", { state: { from: "/cart" } });
+    }
+  };
 
   return (
     <>
@@ -454,14 +521,7 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               textDecoration: "none",
             }}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{ flexShrink: 0 }}
-            >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
               <rect x="0.75" y="3.75" width="18.5" height="12.5" rx="2.25" fill="#2c2820" stroke="#3a352b" strokeWidth="1" />
               <rect x="2.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
               <rect x="5.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
@@ -490,37 +550,36 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               fontSize: 14,
             }}
           >
-            {/* Home */}
             <Link
               to="/"
               style={{
-                color: pathname === "/" ? "#e8b923" : "var(--text-dim)",
+                color: pathname === "/" ? "var(--accent)" : "var(--text-dim)",
                 textDecoration: "none",
                 transition: "color 0.15s",
                 whiteSpace: "nowrap",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = pathname === "/" ? "#e8b923" : "var(--text)")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = pathname === "/" ? "#e8b923" : "var(--text-dim)")}
+              onMouseEnter={(e) => (e.currentTarget.style.color = pathname === "/" ? "var(--accent)" : "var(--text)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = pathname === "/" ? "var(--accent)" : "var(--text-dim)")}
             >
               Home
             </Link>
 
             <KeyboardDropdown />
 
-            {NAV_LINKS.slice(1).map((link) => {
+            {NAV_LINKS.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   to={link.href}
                   style={{
-                    color: isActive ? "#e8b923" : "var(--text-dim)",
+                    color: isActive ? "var(--accent)" : "var(--text-dim)",
                     textDecoration: "none",
                     transition: "color 0.15s",
                     whiteSpace: "nowrap",
                   }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = isActive ? "#e8b923" : "var(--text)")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = isActive ? "#e8b923" : "var(--text-dim)")}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = isActive ? "var(--accent)" : "var(--text)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = isActive ? "var(--accent)" : "var(--text-dim)")}
                 >
                   {link.label}
                 </Link>
@@ -549,24 +608,26 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
                 transition: "color 0.15s, transform 0.1s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                e.currentTarget.style.color = "var(--accent)";
+                e.currentTarget.style.transform = "translateY(-1px)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--text)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                e.currentTarget.style.color = "var(--text)";
+                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               <IconSearch />
             </button>
 
-            {/* User */}
+            {/* User — login แล้วไปโปรไฟล์, ยังไม่ login ไปหน้า login */}
             <button
-              aria-label="บัญชีผู้ใช้"
+              onClick={handleUserClick}
+              aria-label={isLoggedIn ? "โปรไฟล์ของฉัน" : "เข้าสู่ระบบ"}
+              title={isLoggedIn ? "โปรไฟล์ของฉัน" : "เข้าสู่ระบบ"}
               style={{
                 background: "none",
                 border: "none",
-                color: "var(--text)",
+                color: isLoggedIn ? "var(--accent)" : "var(--text)",
                 cursor: "pointer",
                 padding: 4,
                 display: "flex",
@@ -576,21 +637,17 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
                 height: 32,
                 transition: "color 0.15s, transform 0.1s",
               }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--text)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-              }}
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-1px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
             >
               <IconUser />
             </button>
 
-            {/* Cart */}
+            {/* Cart — ต้อง login ก่อนถึงเข้าได้ */}
             <button
+              onClick={handleCartClick}
               aria-label="ตะกร้าสินค้า"
+              title={isLoggedIn ? "ตะกร้าสินค้า" : "เข้าสู่ระบบเพื่อดูตะกร้า"}
               style={{
                 background: "none",
                 border: "none",
@@ -606,16 +663,16 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
                 transition: "color 0.15s, transform 0.1s",
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--accent)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+                e.currentTarget.style.color = "var(--accent)";
+                e.currentTarget.style.transform = "translateY(-1px)";
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.color = "var(--text)";
-                (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+                e.currentTarget.style.color = "var(--text)";
+                e.currentTarget.style.transform = "translateY(0)";
               }}
             >
               <IconCart />
-              {cartCount > 0 && (
+              {isLoggedIn && cartCount > 0 && (
                 <span
                   style={{
                     position: "absolute",
