@@ -156,19 +156,7 @@ function Keyboard() {
           padding: "clamp(32px, 6vw, 56px) clamp(20px, 5vw, 64px) 0",
         }}
       >
-        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
-          <h1
-            style={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontWeight: 800,
-              fontSize: "clamp(28px, 4vw, 40px)",
-              color: "var(--text)",
-              margin: 0,
-            }}
-          >
-            Keyboard
-          </h1>
-        </div>
+
       </section>
 
       <ProductGridSection

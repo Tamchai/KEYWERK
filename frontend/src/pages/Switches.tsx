@@ -2,9 +2,12 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import ProductGridSection from "../components/products/ProductGridSection";
 
+import akkocsradiantred from "../assets/Akko_CS_Radiant_Red.png";
+import gatteronyellowpro from "../assets/Gateron_Yellow_Pro.png";
+
 const SWITCH_PRODUCTS = [
   {
-    image: "/placeholder-switch-1.png",
+    image: gatteronyellowpro,
     brand: "GATERON",
     category: "Linear Switch",
     name: "Gateron Yellow Pro",
@@ -12,7 +15,7 @@ const SWITCH_PRODUCTS = [
     href: "#",
   },
   {
-    image: "/placeholder-switch-2.png",
+    image: akkocsradiantred,
     brand: "AKKO",
     category: "Tactile Switch",
     name: "Akko CS Radiant Red",

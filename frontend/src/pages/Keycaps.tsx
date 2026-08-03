@@ -2,10 +2,15 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import ProductGridSection from "../components/products/ProductGridSection";
 
+import dropmtsusuwatari from "../assets/Drop_MT_-Susuwatari.png";
+import akkoworldtourtokyo from "../assets/Akko_World_Tour_Tokyo.png";
+import gmkolivia from "../assets/GMK_Olivia_Full_Set.png";
+import keywerlsakuraesc from "../assets/KEYWERK_Sakura_Esc_Cap.png";
+
 // TODO: ใส่ path รูปจริงจาก src/assets/ แทน placeholder เหล่านี้
 const KEYCAP_PRODUCTS = [
   {
-    image: "/placeholder-keycap-1.png",
+    image: gmkolivia,
     brand: "GMK",
     category: "Artisan Keycap Set",
     name: "GMK Olivia Full Set",
@@ -13,7 +18,7 @@ const KEYCAP_PRODUCTS = [
     href: "#",
   },
   {
-    image: "/placeholder-keycap-2.png",
+    image: akkoworldtourtokyo,
     brand: "AKKO",
     category: "PBT Dye-Sub Keycap",
     name: "Akko World Tour Tokyo",
@@ -21,7 +26,7 @@ const KEYCAP_PRODUCTS = [
     href: "#",
   },
   {
-    image: "/placeholder-keycap-3.png",
+    image: dropmtsusuwatari,
     brand: "DROP",
     category: "Cherry Profile Keycap",
     name: "Drop MT3 Susuwatari",
@@ -29,7 +34,7 @@ const KEYCAP_PRODUCTS = [
     href: "#",
   },
   {
-    image: "/placeholder-keycap-4.png",
+    image: keywerlsakuraesc,
     brand: "KEYWERK",
     category: "Artisan Single Keycap",
     name: "KEYWERK Sakura Esc Cap",
