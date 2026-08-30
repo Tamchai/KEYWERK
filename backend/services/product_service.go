@@ -1,8 +1,6 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/MaKo114/KEYWERK/core"
 	"github.com/MaKo114/KEYWERK/ports"
 )
@@ -25,7 +23,6 @@ func (s *productService) GetAllProduct() ([]core.ResProduct, error) {
 	var response []core.ResProduct
 
 	products, err := s.productRepo.GetAll()
-	fmt.Println(products)
 	if err != nil {
 		return nil, err
 	}
