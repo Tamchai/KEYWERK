@@ -1,0 +1,19 @@
+services:
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: seaweedfs
+    ports:
+      - "9333:9333" # Master
+      - "8333:8333" # S3 API
+      - "8888:8888" # Filer UI / HTTP Upload
+      - "9340:9340" # Volume Server
+    command: "mini -dir=/data"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - S3_BUCKET=${S3_BUCKET}
+    volumes:
+      - seaweedfs_data:/data
+
+volumes:
+  seaweedfs_data:
