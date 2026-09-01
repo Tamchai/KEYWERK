@@ -13,12 +13,11 @@ type neonUserRepository struct {
 	db *sqlx.DB
 }
 
-func NewNeonUserRepository(db *sqlx.DB) port.UerRepository {
+func NewNeonUserRepository(db *sqlx.DB) port.UserRepository {
 	return &neonUserRepository{db: db}
 }
 
 func (r *neonUserRepository) Save(user dto.User) error {
-
 	query := `
 	INSERT INTO users (user_id, image, name, email, password, role, created_at, updated_at) 
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
@@ -59,13 +58,68 @@ func (r *neonUserRepository) FindEmail(email string) (*dto.User, bool, error) {
 
 	result := r.db.QueryRow(query, email)
 
-	err := result.Scan(&user.ID, &user.Image, &user.Name, &user.Email, &user.Password, &user.Role, &user.CreatedAt, &user.UpdatedAt)
+	var image sql.NullString
+	var name sql.NullString
+	err := result.Scan(
+		&user.ID,
+		&image,
+		&name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, false, nil
 		}
-
 		return nil, false, err
+	}
+
+	if image.Valid {
+		user.Image = image.String
+	}
+	if name.Valid {
+		user.Name = name.String
+	}
+
+	return &user, true, nil
+}
+
+func (r *neonUserRepository) FindByID(id string) (*dto.User, bool, error) {
+	var user dto.User
+	query := `
+	SELECT user_id, image, name, email, password, role, created_at, updated_at 
+	FROM users 
+	WHERE user_id = $1`
+
+	result := r.db.QueryRow(query, id)
+
+	var image sql.NullString
+	var name sql.NullString
+	err := result.Scan(
+		&user.ID,
+		&image,
+		&name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+
+	if image.Valid {
+		user.Image = image.String
+	}
+	if name.Valid {
+		user.Name = name.String
 	}
 
 	return &user, true, nil

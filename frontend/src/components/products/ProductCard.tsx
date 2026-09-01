@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 interface ProductCardProps {
   image: string;
   category: string;
@@ -9,8 +11,8 @@ interface ProductCardProps {
 
 export const ProductCard = ({ image, category, brand, name, price, href }: ProductCardProps) => (
   
-  <a
-    href={href}
+  <Link
+    to={href}
     style={{
       display: "flex",
       flexDirection: "column",
@@ -111,7 +113,7 @@ export const ProductCard = ({ image, category, brand, name, price, href }: Produ
         {price}
       </p>
     </div>
-  </a>
+  </Link>
 );
 
 export default ProductCard;

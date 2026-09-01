@@ -10,17 +10,18 @@ import (
 )
 
 func SetupProductRoutes(route fiber.Router) {
-
 	productRepo := neon.NewNeonProductRepository(infrastructure.DB)
 	productService := service.NewProductService(productRepo)
-	productHandler := http.NewProductHanlder(productService)
+	productHandler := http.NewProductHandler(productService)
 
-	product := route.Group("/products", middleware.AuthMiddleware())
+	product := route.Group("/products")
 
-	product.Get("/:productID", productHandler.FindProductByID)
+	// Public routes
 	product.Get("/", productHandler.ListProducts)
-	product.Post("/", middleware.CheckAdminRole(), productHandler.CreateProduct)
-	product.Put("/:productID", middleware.CheckAdminRole(), productHandler.UpdateProduct)
-	product.Delete("/:productID", middleware.CheckAdminRole(), productHandler.DeleteProduct)
+	product.Get("/:productID", productHandler.FindProductByID)
 
+	// Admin protected routes
+	product.Post("/", middleware.AuthMiddleware(), middleware.CheckAdminRole(), productHandler.CreateProduct)
+	product.Put("/:productID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), productHandler.UpdateProduct)
+	product.Delete("/:productID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), productHandler.DeleteProduct)
 }

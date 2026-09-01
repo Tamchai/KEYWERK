@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
+import { useCartStore } from "../../stores/cartStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,31 +40,34 @@ const QUICK_LINKS = [
   { emoji: "🔤", label: "Keycaps", href: "/keycaps" },
 ];
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
+// ─── Icons (hoisted outside component — render-hoist-jsx) ────────────────────
 
-const IconSearch = () => (
+const IconSearch = memo(() => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" style={{ width: "100%", height: "100%" }}>
     <circle cx="11" cy="11" r="7" />
     <line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
-);
+));
+IconSearch.displayName = "IconSearch";
 
-const IconUser = () => (
+const IconUser = memo(() => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
     <circle cx="12" cy="8" r="4" />
     <path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" />
   </svg>
-);
+));
+IconUser.displayName = "IconUser";
 
-const IconCart = () => (
+const IconCart = memo(() => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 4h2l2.2 11.2a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 8H6" />
     <circle cx="10" cy="21" r="1" />
     <circle cx="17" cy="21" r="1" />
   </svg>
-);
+));
+IconCart.displayName = "IconCart";
 
-const IconChevron = ({ open }: { open: boolean }) => (
+const IconChevron = memo(({ open }: { open: boolean }) => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -80,13 +84,32 @@ const IconChevron = ({ open }: { open: boolean }) => (
   >
     <polyline points="6 9 12 15 18 9" />
   </svg>
-);
+));
+IconChevron.displayName = "IconChevron";
+
+// ─── Logo SVG (hoisted) ──────────────────────────────────────────────────────
+
+const LogoSvg = memo(() => (
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+    <rect x="0.75" y="3.75" width="18.5" height="12.5" rx="2.25" fill="#2c2820" stroke="#3a352b" strokeWidth="1" />
+    <rect x="2.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="5.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="8.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="11.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="14.5" y="5.5" width="3" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="2.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="5.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="8.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="11.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="14.5" y="8.25" width="3" height="2" rx="0.5" fill="#e8b923" />
+    <rect x="2.5" y="11" width="15" height="2" rx="0.5" fill="#e8b923" />
+  </svg>
+));
+LogoSvg.displayName = "LogoSvg";
 
 // ─── KeyboardDropdown ─────────────────────────────────────────────────────────
-// ปรับ: ตัวข้อความ "Keyboard" กดแล้วไปหน้า /keyboard ได้จริง
-// ส่วน chevron แยกเป็นปุ่มกดเปิด/ปิด dropdown ต่างหาก (สำหรับ mobile/touch ที่ hover ไม่ทำงาน)
 
-const KeyboardDropdown = () => {
+const KeyboardDropdown = memo(() => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,7 +126,6 @@ const KeyboardDropdown = () => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ยกเลิก timer ที่ค้างไว้ตอน unmount กัน memory leak
   useEffect(() => {
     return () => {
       if (closeTimer.current) clearTimeout(closeTimer.current);
@@ -118,7 +140,6 @@ const KeyboardDropdown = () => {
     setOpen(true);
   };
 
-  // หน่วงเวลาก่อนปิด แทนที่จะปิดทันที — ให้เวลาผู้ใช้ขยับเมาส์ข้ามช่องว่างไป dropdown
   const scheduleClose = () => {
     closeTimer.current = setTimeout(() => setOpen(false), 200);
   };
@@ -161,7 +182,6 @@ const KeyboardDropdown = () => {
         <IconChevron open={open} />
       </button>
 
-      {/* Dropdown panel */}
       <div
         role="menu"
         onMouseEnter={openMenu}
@@ -218,17 +238,17 @@ const KeyboardDropdown = () => {
       </div>
     </div>
   );
-};
+});
+KeyboardDropdown.displayName = "KeyboardDropdown";
 
 // ─── SearchPanel ──────────────────────────────────────────────────────────────
-// ปรับ: กด Enter หรือคลิก chip แล้วค้นหาได้จริง (navigate ไป /search?q=...)
 
 interface SearchPanelProps {
   open: boolean;
   onClose: () => void;
 }
 
-const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
+const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const navigate = useNavigate();
@@ -440,19 +460,18 @@ const SearchPanel = ({ open, onClose }: SearchPanelProps) => {
       </div>
     </>
   );
-};
+});
+SearchPanel.displayName = "SearchPanel";
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
-interface NavbarProps {
-  cartCount?: number;
-}
-
-export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
+export const Navbar = memo(() => {
   const [searchOpen, setSearchOpen] = useState(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { isLoggedIn } = useAuth();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const cartCount = useCartStore((s) => s.cart?.total_items ?? 0);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -465,12 +484,10 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
-  // User icon: login แล้วไป /profile, ยังไม่ login ไป /login
   const handleUserClick = () => {
     navigate(isLoggedIn ? "/profile" : "/login");
   };
 
-  // Cart icon: ต้อง login ก่อนถึงเข้าได้ ไม่งั้นเด้งไป /login (พร้อมจดจำว่าจะกลับมาที่ /cart)
   const handleCartClick = () => {
     if (isLoggedIn) {
       navigate("/cart");
@@ -506,7 +523,6 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
             boxSizing: "border-box",
           }}
         >
-          {/* Logo */}
           <Link
             to="/"
             style={{
@@ -521,24 +537,10 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               textDecoration: "none",
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-              <rect x="0.75" y="3.75" width="18.5" height="12.5" rx="2.25" fill="#2c2820" stroke="#3a352b" strokeWidth="1" />
-              <rect x="2.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="5.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="8.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="11.5" y="5.5" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="14.5" y="5.5" width="3" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="2.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="5.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="8.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="11.5" y="8.25" width="2.5" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="14.5" y="8.25" width="3" height="2" rx="0.5" fill="#e8b923" />
-              <rect x="2.5" y="11" width="15" height="2" rx="0.5" fill="#e8b923" />
-            </svg>
+            <LogoSvg />
             KEYWERK
           </Link>
 
-          {/* Nav links */}
           <div
             style={{
               flex: 1,
@@ -587,9 +589,39 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
             })}
           </div>
 
-          {/* Icon buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            {/* Search */}
+            {isAdmin && (
+              <Link
+                to="/admin"
+                title="จัดการ Admin"
+                style={{
+                  color: pathname.startsWith("/admin") ? "var(--accent)" : "var(--text-dim)",
+                  textDecoration: "none",
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 700,
+                  fontSize: 13,
+                  letterSpacing: "0.03em",
+                  whiteSpace: "nowrap",
+                  border: "1px solid var(--line)",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  transition: "border-color 0.15s, color 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--accent)";
+                  e.currentTarget.style.color = "var(--accent)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--line)";
+                  e.currentTarget.style.color = pathname.startsWith("/admin")
+                    ? "var(--accent)"
+                    : "var(--text-dim)";
+                }}
+              >
+                Admin
+              </Link>
+            )}
+
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="ค้นหา"
@@ -619,7 +651,6 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               <IconSearch />
             </button>
 
-            {/* User — login แล้วไปโปรไฟล์, ยังไม่ login ไปหน้า login */}
             <button
               onClick={handleUserClick}
               aria-label={isLoggedIn ? "โปรไฟล์ของฉัน" : "เข้าสู่ระบบ"}
@@ -643,7 +674,6 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
               <IconUser />
             </button>
 
-            {/* Cart — ต้อง login ก่อนถึงเข้าได้ */}
             <button
               onClick={handleCartClick}
               aria-label="ตะกร้าสินค้า"
@@ -703,6 +733,8 @@ export const Navbar = ({ cartCount = 0 }: NavbarProps) => {
       <SearchPanel open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
-};
+});
+
+Navbar.displayName = "Navbar";
 
 export default Navbar;

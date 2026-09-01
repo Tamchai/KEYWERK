@@ -10,17 +10,18 @@ import (
 )
 
 func SetupCategoryRoutes(route fiber.Router) {
-
 	categoryRepo := neon.NewNeonCategoryRepository(infrastructure.DB)
 	categoryService := service.NewCategoryService(categoryRepo)
 	categoryHandler := http.NewCategoryHandler(categoryService)
 
-	category := route.Group("/categories", middleware.AuthMiddleware())
+	category := route.Group("/categories")
 
-	category.Get("/:categoryID", categoryHandler.FindCategoryByID)
+	// Public routes
 	category.Get("/", categoryHandler.ListCategories)
-	category.Post("/", middleware.CheckAdminRole(), categoryHandler.SaveCategory)
-	category.Patch("/:categoryID", middleware.CheckAdminRole(), categoryHandler.UpdateCategory)
-	category.Delete("/:categoryID", middleware.CheckAdminRole(), categoryHandler.DeleteCategory)
+	category.Get("/:categoryID", categoryHandler.FindCategoryByID)
 
+	// Admin protected routes
+	category.Post("/", middleware.AuthMiddleware(), middleware.CheckAdminRole(), categoryHandler.SaveCategory)
+	category.Patch("/:categoryID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), categoryHandler.UpdateCategory)
+	category.Delete("/:categoryID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), categoryHandler.DeleteCategory)
 }

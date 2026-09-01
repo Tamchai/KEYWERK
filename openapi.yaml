@@ -1,0 +1,1745 @@
+openapi: 3.0.3
+info:
+  title: KEYWERK API
+  description: |
+    Comprehensive RESTful API specification for **KEYWERK** — Mechanical & Magnetic Keyboard E-Commerce Platform.
+    
+    ### Subsystems:
+    - **Authentication**: JWT token-based auth with Member & Admin roles.
+    - **Catalog**: Products, Variants, Categories, Brands, and Image uploads.
+    - **Shopping**: Cart management, multiple delivery addresses.
+    - **Checkout & Tracking**: Order placement, address updating, order fulfillment tracking.
+    - **Payments**: Multi-channel payments and admin payment verification.
+  version: 1.0.0
+  contact:
+    name: KEYWERK Engineering Team
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local Development Server
+
+tags:
+  - name: Auth
+    description: User registration and authentication
+  - name: Addresses
+    description: Customer shipping address management
+  - name: Products
+    description: Public product browsing & admin catalog management
+  - name: Product Variants
+    description: Product variants (switches, colors, layouts)
+  - name: Categories
+    description: Product categories (Mechanical, Magnetic, Custom, etc.)
+  - name: Brands
+    description: Keyboard & accessory brands
+  - name: Upload
+    description: Media storage (SeaweedFS S3)
+  - name: Cart
+    description: Shopping cart and cart item management
+  - name: Orders
+    description: Customer checkout, order placement, and history
+  - name: Admin Orders
+    description: Admin order fulfillment and tracking
+  - name: Payments
+    description: Payment submission and status tracking
+  - name: Admin Payments
+    description: Admin payment verification
+
+paths:
+  # ─── AUTH ───────────────────────────────────────────────────────────────────
+  /register:
+    post:
+      tags:
+        - Auth
+      summary: Register a new user
+      description: Creates a new member account.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqRegister'
+      responses:
+        '200':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Invalid request body or validation failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /login:
+    post:
+      tags:
+        - Auth
+      summary: User login
+      description: Authenticates user credentials and returns a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqLogin'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid body or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ─── ADDRESSES ──────────────────────────────────────────────────────────────
+  /addresses:
+    get:
+      tags:
+        - Addresses
+      summary: Get user shipping addresses
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of saved addresses
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResAddress'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+        - Addresses
+      summary: Create shipping address
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqAddress'
+      responses:
+        '201':
+          description: Address created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /addresses/{addressID}:
+    get:
+      tags:
+        - Addresses
+      summary: Get address by ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: addressID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Address details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ResAddress'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Addresses
+      summary: Update shipping address
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: addressID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqAddress'
+      responses:
+        '200':
+          description: Address updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    delete:
+      tags:
+        - Addresses
+      summary: Delete shipping address
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: addressID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Address deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ─── PRODUCTS ───────────────────────────────────────────────────────────────
+  /products:
+    get:
+      tags:
+        - Products
+      summary: List and filter products (Public)
+      parameters:
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: brand_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of filtered products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResProduct'
+    post:
+      tags:
+        - Products
+      summary: Create new product (Admin Only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqProduct'
+      responses:
+        '201':
+          description: Product created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /products/{productID}:
+    get:
+      tags:
+        - Products
+      summary: Get product details (Public)
+      parameters:
+        - name: productID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResProduct'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Products
+      summary: Update product (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateProduct'
+      responses:
+        '200':
+          description: Product updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+    delete:
+      tags:
+        - Products
+      summary: Delete product (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Product deleted
+
+  # ─── PRODUCT VARIANTS ───────────────────────────────────────────────────────
+  /product-variants:
+    get:
+      tags:
+        - Product Variants
+      summary: List all variants (Public)
+      responses:
+        '200':
+          description: List of all product variants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResProductVariant'
+    post:
+      tags:
+        - Product Variants
+      summary: Create product variant (Admin Only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqProductVariant'
+      responses:
+        '201':
+          description: Variant created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /product-variants/product/{productID}:
+    get:
+      tags:
+        - Product Variants
+      summary: Get variants by Product ID (Public)
+      parameters:
+        - name: productID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of variants for this product
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResProductVariant'
+
+  /product-variants/{variantID}:
+    get:
+      tags:
+        - Product Variants
+      summary: Get variant detail (Public)
+      parameters:
+        - name: variantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Variant detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResProductVariant'
+    put:
+      tags:
+        - Product Variants
+      summary: Update variant (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: variantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateProductVariant'
+      responses:
+        '200':
+          description: Variant updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+    delete:
+      tags:
+        - Product Variants
+      summary: Delete variant (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: variantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Variant deleted
+
+  # ─── CATEGORIES & BRANDS ───────────────────────────────────────────────────
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List all categories (Public)
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      tags:
+        - Categories
+      summary: Create category (Admin Only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqCategory'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /categories/{categoryID}:
+    get:
+      tags:
+        - Categories
+      summary: Get category by ID (Public)
+      parameters:
+        - name: categoryID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    patch:
+      tags:
+        - Categories
+      summary: Update category (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqCategory'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+    delete:
+      tags:
+        - Categories
+      summary: Delete category (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: categoryID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Category deleted
+
+  /brands:
+    get:
+      tags:
+        - Brands
+      summary: List all brands (Public)
+      responses:
+        '200':
+          description: List of brands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Brand'
+    post:
+      tags:
+        - Brands
+      summary: Create brand (Admin Only)
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqBrand'
+      responses:
+        '201':
+          $ref: '#/components/responses/Created'
+
+  /brands/{brandID}:
+    get:
+      tags:
+        - Brands
+      summary: Get brand by ID (Public)
+      parameters:
+        - name: brandID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Brand'
+    patch:
+      tags:
+        - Brands
+      summary: Update brand (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: brandID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqBrand'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+    delete:
+      tags:
+        - Brands
+      summary: Delete brand (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: brandID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Brand deleted
+
+  # ─── UPLOAD ─────────────────────────────────────────────────────────────────
+  /upload:
+    post:
+      tags:
+        - Upload
+      summary: Upload product images to SeaweedFS S3
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Image upload response with generated URLs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResImage'
+
+  # ─── CART ───────────────────────────────────────────────────────────────────
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: Get user shopping cart
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Cart contents with calculated subtotals and grand total
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResCart'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags:
+        - Cart
+      summary: Clear entire shopping cart
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Cart cleared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /cart/items:
+    post:
+      tags:
+        - Cart
+      summary: Add item to cart
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqAddToCart'
+      responses:
+        '200':
+          description: Item added to cart successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Insufficient stock or invalid variant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cart/items/{cartItemID}:
+    put:
+      tags:
+        - Cart
+      summary: Update cart item quantity
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cartItemID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateCartItem'
+      responses:
+        '200':
+          description: Quantity updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+    delete:
+      tags:
+        - Cart
+      summary: Remove item from cart
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cartItemID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Item removed from cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ─── ORDERS ─────────────────────────────────────────────────────────────────
+  /orders:
+    get:
+      tags:
+        - Orders
+      summary: Get user order history
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of user orders
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResOrder'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      tags:
+        - Orders
+      summary: Place order (from cart or direct items)
+      description: |
+        Creates an order. If `items` array is empty, it automatically checks out all items in the user's cart and clears the cart upon success.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqCreateOrder'
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ResOrderDetail'
+        '400':
+          description: Insufficient stock or invalid address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/{orderID}:
+    get:
+      tags:
+        - Orders
+      summary: Get order details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full order details with items and payment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ResOrderDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /orders/{orderID}/address:
+    put:
+      tags:
+        - Orders
+      summary: Change shipping address for pending order
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateOrderAddress'
+      responses:
+        '200':
+          description: Shipping address updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Cannot update address for processed/shipped order
+
+  # ─── ADMIN ORDERS ───────────────────────────────────────────────────────────
+  /admin/orders:
+    get:
+      tags:
+        - Admin Orders
+      summary: View all customer orders (Admin Only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: All orders across the platform
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResOrder'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/orders/{orderID}/status:
+    put:
+      tags:
+        - Admin Orders
+      summary: Update order status (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateOrderStatus'
+      responses:
+        '200':
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /admin/orders/{orderID}/tracking:
+    put:
+      tags:
+        - Admin Orders
+      summary: Update tracking number & status (Admin Only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateTracking'
+      responses:
+        '200':
+          description: Tracking number updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ─── PAYMENTS ───────────────────────────────────────────────────────────────
+  /payments:
+    post:
+      tags:
+        - Payments
+      summary: Submit payment for an order
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqCreatePayment'
+      responses:
+        '201':
+          description: Payment record created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ResPayment'
+
+  /payments/order/{orderID}:
+    get:
+      tags:
+        - Payments
+      summary: Get payment status by Order ID
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ResPayment'
+
+  # ─── ADMIN PAYMENTS ─────────────────────────────────────────────────────────
+  /admin/payments:
+    get:
+      tags:
+        - Admin Payments
+      summary: View all payment transactions (Admin Only)
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of all payments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ResPayment'
+
+  /admin/payments/{paymentID}/verify:
+    put:
+      tags:
+        - Admin Payments
+      summary: Verify payment status (Admin Only)
+      description: Sets payment status to `paid` or `failed`. If marked as `paid`, order status automatically advances to `processing`.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqVerifyPayment'
+      responses:
+        '200':
+          description: Payment verification updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+# ─── COMPONENTS ───────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your JWT Bearer token received from `/login`.
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden - Admin access required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request or validation failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Created:
+      description: Resource created
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageResponse'
+    Message:
+      description: Operation success
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageResponse'
+
+  schemas:
+    # Generic Responses
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: operation successful
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: invalid request body
+        error:
+          type: string
+
+    # Auth
+    ReqRegister:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - confirm_password
+      properties:
+        image:
+          type: string
+          example: https://.../avatar.jpg
+        name:
+          type: string
+          example: Somchai Developer
+        email:
+          type: string
+          format: email
+          example: somchai@example.com
+        password:
+          type: string
+          format: password
+          example: mysecretpassword
+        confirm_password:
+          type: string
+          format: password
+          example: mysecretpassword
+
+    ReqLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: somchai@example.com
+        password:
+          type: string
+          format: password
+          example: mysecretpassword
+
+    LoginResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: login success
+        email:
+          type: string
+          example: somchai@example.com
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+    # Addresses
+    ReqAddress:
+      type: object
+      required:
+        - receiver_name
+        - phone_number
+        - address_line1
+        - district
+        - province
+        - postal_code
+      properties:
+        title:
+          type: string
+          example: Home / Office
+        receiver_name:
+          type: string
+          example: Somchai Dev
+        phone_number:
+          type: string
+          example: "0812345678"
+        address_line1:
+          type: string
+          example: 123/45 Sukhumvit Road
+        address_line2:
+          type: string
+          example: Building A, Room 402
+        district:
+          type: string
+          example: Khlong Toei
+        province:
+          type: string
+          example: Bangkok
+        postal_code:
+          type: string
+          example: "10110"
+        is_default:
+          type: boolean
+          example: true
+
+    ResAddress:
+      type: object
+      properties:
+        address_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        receiver_name:
+          type: string
+        phone_number:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        district:
+          type: string
+        province:
+          type: string
+        postal_code:
+          type: string
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    # Categories & Brands
+    Category:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        category_name:
+          type: string
+          example: Mechanical Keyboard
+
+    ReqCategory:
+      type: object
+      required:
+        - category_name
+      properties:
+        category_name:
+          type: string
+          example: Magnetic Keyboard
+
+    Brand:
+      type: object
+      properties:
+        brand_id:
+          type: string
+          format: uuid
+        brand_name:
+          type: string
+          example: KEYWERK
+
+    ReqBrand:
+      type: object
+      required:
+        - brand_name
+      properties:
+        brand_name:
+          type: string
+          example: Wooting
+
+    # Images
+    ResImage:
+      type: object
+      properties:
+        image_id:
+          type: string
+          format: uuid
+        image_url:
+          type: string
+          example: http://localhost:8333/products/uuid.png
+
+    # Products
+    ReqProduct:
+      type: object
+      required:
+        - category_id
+        - brand_id
+        - product_name
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        brand_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          example: KEYWERK Origin 65
+        description:
+          type: string
+          example: Premium 65% CNC Aluminum mechanical keyboard kit with gasket mount.
+
+    ReqUpdateProduct:
+      type: object
+      properties:
+        category_id:
+          type: string
+          format: uuid
+        brand_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        description:
+          type: string
+
+    ResProduct:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        category_id:
+          type: string
+          format: uuid
+        brand_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        description:
+          type: string
+        total_sold:
+          type: integer
+          example: 120
+
+    # Product Variants
+    ReqProductVariant:
+      type: object
+      required:
+        - product_id
+        - variant_name
+        - price
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        image_id:
+          type: string
+          format: uuid
+        variant_name:
+          type: string
+          example: Anodized Black / Brass Weight
+        stock:
+          type: integer
+          example: 50
+        price:
+          type: number
+          format: float
+          example: 5500.00
+        attributes:
+          type: object
+          example:
+            color: Black
+            plate: FR4
+            layout: ANSI
+
+    ReqUpdateProductVariant:
+      type: object
+      properties:
+        image_id:
+          type: string
+          format: uuid
+        variant_name:
+          type: string
+        stock:
+          type: integer
+        price:
+          type: number
+          format: float
+        attributes:
+          type: object
+
+    ResProductVariant:
+      type: object
+      properties:
+        variant_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        image_id:
+          type: string
+          format: uuid
+        variant_name:
+          type: string
+        stock:
+          type: integer
+        price:
+          type: number
+          format: float
+        sold_count:
+          type: integer
+        attributes:
+          type: object
+
+    # Cart
+    ReqAddToCart:
+      type: object
+      required:
+        - variant_id
+        - quantity
+      properties:
+        variant_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+
+    ReqUpdateCartItem:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    ResCartItem:
+      type: object
+      properties:
+        cartitem_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        variant_name:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        image_url:
+          type: string
+        price:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        stock:
+          type: integer
+        subtotal:
+          type: number
+          format: float
+
+    ResCart:
+      type: object
+      properties:
+        cart_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResCartItem'
+        total_items:
+          type: integer
+          example: 3
+        total_price:
+          type: number
+          format: float
+          example: 16500.00
+
+    # Orders
+    ReqOrderItem:
+      type: object
+      required:
+        - variant_id
+        - quantity
+      properties:
+        variant_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+
+    ReqCreateOrder:
+      type: object
+      properties:
+        address_id:
+          type: string
+          format: uuid
+          description: Optional if using a saved address ID
+        receiver_name:
+          type: string
+        phone_number:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        district:
+          type: string
+        province:
+          type: string
+        postal_code:
+          type: string
+        shipping_method:
+          type: string
+          example: Kerry Express
+        items:
+          type: array
+          description: Optional list of items. If empty, items will be checked out directly from the user's cart.
+          items:
+            $ref: '#/components/schemas/ReqOrderItem'
+
+    ReqUpdateOrderAddress:
+      type: object
+      required:
+        - receiver_name
+        - phone_number
+        - address_line1
+        - district
+        - province
+        - postal_code
+      properties:
+        receiver_name:
+          type: string
+        phone_number:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        district:
+          type: string
+        province:
+          type: string
+        postal_code:
+          type: string
+
+    ReqUpdateOrderStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [pending, processing, shipped, cancelled]
+
+    ReqUpdateTracking:
+      type: object
+      required:
+        - tracking_number
+      properties:
+        tracking_number:
+          type: string
+          example: TH0123456789K
+        status:
+          type: string
+          enum: [pending, processing, shipped, cancelled]
+          default: shipped
+
+    ResOrderItem:
+      type: object
+      properties:
+        orderitem_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        variant_name:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+        image_url:
+          type: string
+        unit_price:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        subtotal:
+          type: number
+          format: float
+
+    ResOrder:
+      type: object
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, shipped, cancelled]
+        total_price:
+          type: number
+          format: float
+        shipping_method:
+          type: string
+        tracking_number:
+          type: string
+        receiver_name:
+          type: string
+        phone_number:
+          type: string
+        address_line1:
+          type: string
+        address_line2:
+          type: string
+        district:
+          type: string
+        province:
+          type: string
+        postal_code:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ResOrderDetail:
+      allOf:
+        - $ref: '#/components/schemas/ResOrder'
+        - type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/ResOrderItem'
+            payment:
+              $ref: '#/components/schemas/ResPayment'
+
+    # Payments
+    ReqCreatePayment:
+      type: object
+      required:
+        - order_id
+        - amount
+        - payment_method
+      properties:
+        order_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+          example: 5500.00
+        payment_method:
+          type: string
+          example: promptpay_qr
+          enum: [promptpay_qr, bank_transfer, credit_card, stripe, cash_on_delivery]
+
+    ReqVerifyPayment:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [paid, failed]
+
+    ResPayment:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [pending, paid, failed]
+        payment_method:
+          type: string
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true

@@ -3,10 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"path/filepath"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/keywerk/internal/core/domain/dto"
+	"github.com/keywerk/internal/core/domain/errs"
 	port "github.com/keywerk/internal/core/port/repository"
 )
 
@@ -47,23 +50,23 @@ func (s *imageService) UploadImage(ctx context.Context, imageLists []dto.ReqImag
 			return nil, err
 		}
 
-		// url, err := url.Parse(imageURL)
+		url, err := url.Parse(imageURL)
 
-		// if err != nil {
-		// 	return nil, errs.Internal("can't parse file path", err)
-		// }
+		if err != nil {
+			return nil, errs.Internal("can't parse file path", err)
+		}
 
-		// image := dto.Image{
-		// 	ID:        newImageID,
-		// 	URL:       url.Path,
-		// 	CreatedAt: time.Now(),
-		// 	UpdatedAt: time.Now(),
-		// }
+		image := dto.Image{
+			ID:        newImageID,
+			URL:       url.Path,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
 
-		// err = s.imageRepo.SaveImageMetadata(ctx, image)
-		// if err != nil {
-		// 	return nil, err
-		// }
+		err = s.imageRepo.SaveImageMetadata(ctx, image)
+		if err != nil {
+			return nil, err
+		}
 
 		resImageList = append(resImageList, dto.ResImage{
 			ID:  newImageID,

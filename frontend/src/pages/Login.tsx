@@ -1,16 +1,50 @@
+import { useState, type CSSProperties, type FormEvent } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { ApiError } from "../api/client";
+import { useAuthStore } from "../stores/authStore";
+
+const inputStyle: CSSProperties = {
+  width: "100%",
+  padding: "12px 14px",
+  marginBottom: 12,
+  borderRadius: 8,
+  border: "1px solid var(--line)",
+  background: "var(--surface)",
+  color: "var(--text)",
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: 14,
+  boxSizing: "border-box",
+};
 
 function Login() {
-  const { login } = useAuth();
+  const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
   const location = useLocation();
 
   const from = (location.state as { from?: string })?.from || "/profile";
 
-  const handleLogin = () => {
-    login();
-    navigate(from, { replace: true });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setSubmitting(true);
+
+    try {
+      await login(email.trim(), password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+      } else {
+        setError(err instanceof Error ? err.message : "เข้าสู่ระบบไม่สำเร็จ");
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -27,7 +61,6 @@ function Login() {
       }}
     >
       <div style={{ maxWidth: 360, width: "100%" }}>
-        {/* โลโก้ — กดแล้วกลับหน้าแรกได้ */}
         <Link
           to="/"
           style={{
@@ -74,59 +107,58 @@ function Login() {
           เข้าสู่ระบบ
         </h1>
 
-        {/* ฟอร์ม mock — ยังไม่เช็คข้อมูลจริง */}
-        <input
-          type="email"
-          placeholder="อีเมล"
-          style={{
-            width: "100%",
-            padding: "12px 14px",
-            marginBottom: 12,
-            borderRadius: 8,
-            border: "1px solid var(--line)",
-            background: "var(--surface)",
-            color: "var(--text)",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 14,
-            boxSizing: "border-box",
-          }}
-        />
-        <input
-          type="password"
-          placeholder="รหัสผ่าน"
-          style={{
-            width: "100%",
-            padding: "12px 14px",
-            marginBottom: 20,
-            borderRadius: 8,
-            border: "1px solid var(--line)",
-            background: "var(--surface)",
-            color: "var(--text)",
-            fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 14,
-            boxSizing: "border-box",
-          }}
-        />
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="อีเมล"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={inputStyle}
+          />
+          <input
+            type="password"
+            placeholder="รหัสผ่าน"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ ...inputStyle, marginBottom: error ? 12 : 20 }}
+          />
 
-        <button
-          onClick={handleLogin}
-          style={{
-            width: "100%",
-            padding: "13px 22px",
-            background: "var(--accent)",
-            color: "#1c1810",
-            border: "none",
-            borderRadius: 8,
-            fontFamily: "'JetBrains Mono', monospace",
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: "pointer",
-          }}
-        >
-          เข้าสู่ระบบ
-        </button>
+          {error && (
+            <p
+              style={{
+                margin: "0 0 16px",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 13,
+                color: "#e85d5d",
+              }}
+            >
+              {error}
+            </p>
+          )}
 
-        {/* ถามว่ามีบัญชีไหม → ไปหน้า register */}
+          <button
+            type="submit"
+            disabled={submitting}
+            style={{
+              width: "100%",
+              padding: "13px 22px",
+              background: "var(--accent)",
+              color: "#1c1810",
+              border: "none",
+              borderRadius: 8,
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: submitting ? "not-allowed" : "pointer",
+              opacity: submitting ? 0.7 : 1,
+            }}
+          >
+            {submitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+          </button>
+        </form>
+
         <p
           style={{
             marginTop: 20,

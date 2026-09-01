@@ -4,6 +4,7 @@ type ProductVariant struct {
 	ID         string
 	ProductID  string
 	ImageID    string
+	ImageURL   string
 	Name       string
 	Stock      int
 	Price      float64
@@ -12,11 +13,19 @@ type ProductVariant struct {
 }
 
 type ReqProductVariant struct {
-	ProductID  string         `json:"product_id"`
+	ProductID  string         `json:"product_id" validate:"required"`
+	ImageID    string         `json:"image_id"`
+	Name       string         `json:"variant_name" validate:"required"`
+	Stock      int            `json:"stock"`
+	Price      float64        `json:"price" validate:"required"`
+	Attributes map[string]any `json:"attributes"`
+}
+
+type ReqUpdateProductVariant struct {
 	ImageID    string         `json:"image_id"`
 	Name       string         `json:"variant_name"`
-	Stock      int            `json:"stock"`
-	Price      float64        `json:"price"`
+	Stock      *int           `json:"stock"`
+	Price      *float64       `json:"price"`
 	Attributes map[string]any `json:"attributes"`
 }
 
@@ -24,6 +33,7 @@ type ResProductVariant struct {
 	ID         string         `json:"variant_id"`
 	ProductID  string         `json:"product_id"`
 	ImageID    string         `json:"image_id"`
+	ImageURL   string         `json:"image_url"`
 	Name       string         `json:"variant_name"`
 	Stock      int            `json:"stock"`
 	Price      float64        `json:"price"`
