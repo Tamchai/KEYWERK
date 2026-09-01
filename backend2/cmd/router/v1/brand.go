@@ -10,17 +10,18 @@ import (
 )
 
 func SetupBrandRoutes(router fiber.Router) {
-
 	brandRepo := neon.NewNeonBrandRepository(infrastructure.DB)
 	brandService := service.NewBrandSerivce(brandRepo)
 	brandHandler := http.NewBrandHandler(brandService)
 
-	brand := router.Group("/brands", middleware.AuthMiddleware())
+	brand := router.Group("/brands")
 
+	// Public routes
 	brand.Get("/", brandHandler.GetAllBrands)
 	brand.Get("/:brandID", brandHandler.GetBrandByID)
-	brand.Post("/", middleware.CheckAdminRole(), brandHandler.CreateBrand)
-	brand.Patch("/:brandID", middleware.CheckAdminRole(), brandHandler.UpdateBrand)
-	brand.Delete("/:brandID", middleware.CheckAdminRole(), brandHandler.DeleteBrand)
 
+	// Admin protected routes
+	brand.Post("/", middleware.AuthMiddleware(), middleware.CheckAdminRole(), brandHandler.CreateBrand)
+	brand.Patch("/:brandID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), brandHandler.UpdateBrand)
+	brand.Delete("/:brandID", middleware.CheckAdminRole(), brandHandler.DeleteBrand)
 }

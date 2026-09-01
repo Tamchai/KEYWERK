@@ -1,6 +1,7 @@
 import { ProductCard } from "./ProductCard";
 
 interface Product {
+  id?: string;
   image: string;
   category: string;
   brand?: string;
@@ -65,7 +66,7 @@ export const ProductGridSection = ({ id, title, subtitle, products }: ProductGri
         }}
       >
         {products.map((p) => (
-          <ProductCard key={p.name} {...p} />
+          <ProductCard key={p.id ?? p.name} {...p} />
         ))}
       </div>
     </div>

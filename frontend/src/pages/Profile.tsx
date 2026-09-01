@@ -1,10 +1,11 @@
-import { useAuth } from "../context/AuthContext";
+import { useAuthStore } from "../stores/authStore";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 
 function Profile() {
-  const { logout } = useAuth();
+  const email = useAuthStore((s) => s.email);
+  const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -38,6 +39,20 @@ function Profile() {
           >
             โปรไฟล์ของฉัน
           </h1>
+
+          {email && (
+            <p
+              style={{
+                margin: "0 0 8px",
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 14,
+                color: "var(--text-dim)",
+              }}
+            >
+              {email}
+            </p>
+          )}
+
           <button
             onClick={handleLogout}
             style={{

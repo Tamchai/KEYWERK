@@ -76,3 +76,16 @@ func (r *imageRepository) SaveImageMetadata(ctx context.Context, image dto.Image
 
 // 	return nil
 // }
+
+// func (r *imageRepository) GetImageByID(ctx context.Context, imageID string) (string, error) {
+
+// 	obj, err := r.s3Client.GetObject(ctx, &s3.GetObjectInput{
+// 		Bucket: aws.String(r.bucketName),
+// 		Key:    aws.String(imageID),
+// 	})
+
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// return "", nil

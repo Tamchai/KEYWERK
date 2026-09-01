@@ -19,15 +19,14 @@ type UserService interface {
 }
 
 type userService struct {
-	userRepo port.UerRepository
+	userRepo port.UserRepository
 }
 
-func NewUserService(userRepo port.UerRepository) UserService {
+func NewUserService(userRepo port.UserRepository) UserService {
 	return &userService{userRepo: userRepo}
 }
 
 func (s *userService) Login(reqLogin dto.ReqLogin) (string, error) {
-
 	user, found, err := s.userRepo.FindEmail(reqLogin.Email)
 	if err != nil {
 		return "", err
@@ -46,7 +45,7 @@ func (s *userService) Login(reqLogin dto.ReqLogin) (string, error) {
 		"user_id":   user.ID,
 		"email":     user.Email,
 		"user_role": string(user.Role),
-		"exp":       time.Now().Add(time.Hour * 24).Unix(),
+		"exp":       time.Now().Add(time.Hour * 24 * 7).Unix(),
 	}
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -66,7 +65,6 @@ func (s *userService) Login(reqLogin dto.ReqLogin) (string, error) {
 }
 
 func (s *userService) Register(reqRegister dto.ReqRegister) error {
-
 	_, found, err := s.userRepo.FindEmail(reqRegister.Email)
 	if err != nil {
 		return fmt.Errorf("check email failed: %w", err)

@@ -14,10 +14,15 @@ func SetupProductVariantRoutes(route fiber.Router) {
 	productVariantService := service.NewProductVariantService(productVariantRepo)
 	productVariantHandler := http.NewProductVariantHandler(productVariantService)
 
-	productVariant := route.Group("/product-variants", middleware.AuthMiddleware())
+	productVariant := route.Group("/product-variants")
 
-	productVariant.Get("/:variantID", productVariantHandler.FingProductVariantByID)
-	productVariant.Post("/", middleware.CheckAdminRole(), productVariantHandler.CreateProductVariant)
-	productVariant.Delete("/:variantID", middleware.CheckAdminRole(), productVariantHandler.DeleteProductVariant)
+	// Public routes
+	productVariant.Get("/", productVariantHandler.GetAllProductVariants)
+	productVariant.Get("/product/:productID", productVariantHandler.GetVariantsByProductID)
+	productVariant.Get("/:variantID", productVariantHandler.FindProductVariantByID)
 
+	// Admin protected routes
+	productVariant.Post("/", middleware.AuthMiddleware(), middleware.CheckAdminRole(), productVariantHandler.CreateProductVariant)
+	productVariant.Put("/:variantID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), productVariantHandler.UpdateProductVariant)
+	productVariant.Delete("/:variantID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), productVariantHandler.DeleteProductVariant)
 }

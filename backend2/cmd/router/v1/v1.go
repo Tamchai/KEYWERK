@@ -12,4 +12,7 @@ func SetupV1Routes(app fiber.Router) {
 	SetupProductRoutes(v1)
 	SetupProductVariantRoutes(v1)
 	SetupImageRoutes(v1)
+	SetupCartRoutes(v1)
+	SetupOrderRoutes(v1)
+	SetupPaymentRoutes(v1)
 }

@@ -18,6 +18,20 @@ type Address struct {
 }
 
 type ReqAddress struct {
+	Title        string `json:"title"`
+	ReceiverName string `json:"receiver_name" validate:"required"`
+	PhoneNumber  string `json:"phone_number" validate:"required"`
+	AddressLine1 string `json:"address_line1" validate:"required"`
+	AddressLine2 string `json:"address_line2"`
+	District     string `json:"district" validate:"required"`
+	Province     string `json:"province" validate:"required"`
+	PostalCode   string `json:"postal_code" validate:"required"`
+	IsDefault    bool   `json:"is_default"`
+}
+
+type ResAddress struct {
+	ID           string    `json:"address_id"`
+	UserID       string    `json:"user_id"`
 	Title        string    `json:"title"`
 	ReceiverName string    `json:"receiver_name"`
 	PhoneNumber  string    `json:"phone_number"`

@@ -10,7 +10,6 @@ import (
 )
 
 func SetupAddressRoutes(router fiber.Router) {
-
 	addressRepo := neon.NewNeonAddressRepository(infrastructure.DB)
 	addressService := service.NewAddressService(addressRepo)
 	addressHandler := http.NewAddressHandler(addressService)
@@ -18,4 +17,8 @@ func SetupAddressRoutes(router fiber.Router) {
 	address := router.Group("/addresses", middleware.AuthMiddleware())
 
 	address.Post("/", addressHandler.CreateAddress)
+	address.Get("/", addressHandler.GetAddresses)
+	address.Get("/:addressID", addressHandler.GetAddressByID)
+	address.Put("/:addressID", addressHandler.UpdateAddress)
+	address.Delete("/:addressID", addressHandler.DeleteAddress)
 }
