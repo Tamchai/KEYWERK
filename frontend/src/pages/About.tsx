@@ -22,7 +22,7 @@ function About() {
           {/* Label */}
           <p
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 12,
               color: "var(--accent)",
               textTransform: "uppercase",
@@ -35,7 +35,7 @@ function About() {
 
           <h1
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: "clamp(28px, 4vw, 40px)",
               color: "var(--text)",
@@ -48,7 +48,7 @@ function About() {
 
           <p
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 15,
               color: "var(--text-dim)",
               lineHeight: 1.8,
@@ -62,7 +62,7 @@ function About() {
 
           <p
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 15,
               color: "var(--text-dim)",
               lineHeight: 1.8,
@@ -89,7 +89,7 @@ function About() {
               <div key={stat.label}>
                 <p
                   style={{
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "var(--font-sans)",
                     fontWeight: 800,
                     fontSize: "clamp(28px, 4vw, 36px)",
                     color: "var(--accent)",
@@ -100,7 +100,7 @@ function About() {
                 </p>
                 <p
                   style={{
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "var(--font-sans)",
                     fontSize: 13,
                     color: "var(--text-dim)",
                     margin: 0,
@@ -129,7 +129,7 @@ function About() {
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <p
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 12,
               color: "var(--accent)",
               textTransform: "uppercase",
@@ -142,7 +142,7 @@ function About() {
 
           <h2
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: "clamp(22px, 3vw, 32px)",
               color: "var(--text)",
@@ -175,7 +175,7 @@ function About() {
                 <div>
                   <p
                     style={{
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "var(--font-sans)",
                       fontSize: 11,
                       color: "var(--text-dim)",
                       textTransform: "uppercase",
@@ -187,7 +187,7 @@ function About() {
                   </p>
                   <p
                     style={{
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "var(--font-sans)",
                       fontSize: 14,
                       color: "var(--text)",
                       margin: 0,

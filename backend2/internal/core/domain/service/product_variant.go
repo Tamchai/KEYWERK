@@ -52,6 +52,9 @@ func (s *productvariantService) CreateProductVariant(req dto.ReqProductVariant) 
 
 	err = s.productvariantRepo.Create(variant)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return errs.BadRequest("product or image not found", err)
+		}
 		msg := fmt.Sprintf("cannot create variant %s", variant.Name)
 		return errs.Internal(msg, err)
 	}
@@ -60,6 +63,9 @@ func (s *productvariantService) CreateProductVariant(req dto.ReqProductVariant) 
 }
 
 func (s *productvariantService) FindProductVariantByID(id string) (*dto.ResProductVariant, error) {
+	if err := validateUUID(id, "variant id"); err != nil {
+		return nil, err
+	}
 	variant, err := s.productvariantRepo.FindByID(id)
 	if err != nil {
 		msg := fmt.Sprintf("variant not found: %s", id)
@@ -87,6 +93,9 @@ func (s *productvariantService) FindProductVariantByID(id string) (*dto.ResProdu
 }
 
 func (s *productvariantService) GetVariantsByProductID(productID string) ([]dto.ResProductVariant, error) {
+	if err := validateUUID(productID, "product id"); err != nil {
+		return nil, err
+	}
 	variants, err := s.productvariantRepo.GetByProductID(productID)
 	if err != nil {
 		return nil, errs.Internal("cannot get product variants", err)
@@ -145,6 +154,9 @@ func (s *productvariantService) GetAllProductVariants() ([]dto.ResProductVariant
 }
 
 func (s *productvariantService) UpdateProductVariant(id string, req dto.ReqUpdateProductVariant) error {
+	if err := validateUUID(id, "variant id"); err != nil {
+		return err
+	}
 	existing, err := s.productvariantRepo.FindByID(id)
 	if err != nil {
 		msg := fmt.Sprintf("variant not found: %s", id)
@@ -172,6 +184,9 @@ func (s *productvariantService) UpdateProductVariant(id string, req dto.ReqUpdat
 
 	err = s.productvariantRepo.Update(id, *existing)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return errs.BadRequest("image not found", err)
+		}
 		msg := fmt.Sprintf("cannot update variant %s", id)
 		return errs.Internal(msg, err)
 	}
@@ -180,6 +195,9 @@ func (s *productvariantService) UpdateProductVariant(id string, req dto.ReqUpdat
 }
 
 func (s *productvariantService) DeleteProductVariant(id string) error {
+	if err := validateUUID(id, "variant id"); err != nil {
+		return err
+	}
 	_, err := s.productvariantRepo.FindByID(id)
 	if err != nil {
 		msg := fmt.Sprintf("variant not found: %s", id)
@@ -188,6 +206,9 @@ func (s *productvariantService) DeleteProductVariant(id string) error {
 
 	err = s.productvariantRepo.Delete(id)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return errs.Conflict("cannot delete a variant referenced by an order", err)
+		}
 		msg := fmt.Sprintf("cannot delete variant %s", id)
 		return errs.Internal(msg, err)
 	}

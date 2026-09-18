@@ -104,6 +104,46 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /profile:
+    get:
+      tags:
+        - Auth
+      summary: Get the authenticated user's profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags:
+        - Auth
+      summary: Update the authenticated user's name or profile image
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReqUpdateProfile'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: No valid profile field supplied
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   # ─── ADDRESSES ──────────────────────────────────────────────────────────────
   /addresses:
     get:
@@ -650,6 +690,8 @@ paths:
       tags:
         - Upload
       summary: Upload product images to SeaweedFS S3
+      security:
+        - BearerAuth: []
       requestBody:
         required: true
         content:
@@ -671,6 +713,41 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ResImage'
+
+  /profile/image:
+    post:
+      tags:
+        - Upload
+      summary: Upload an image for the authenticated user's profile
+      description: Stores the image in the dedicated SeaweedFS `profiles` bucket.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - images
+              properties:
+                images:
+                  type: array
+                  maxItems: 1
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Uploaded profile image URL
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResImage'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # ─── CART ───────────────────────────────────────────────────────────────────
   /cart:
@@ -980,7 +1057,7 @@ paths:
     post:
       tags:
         - Payments
-      summary: Submit payment for an order
+      summary: Create or resume a Stripe Checkout Session for an order
       security:
         - BearerAuth: []
       requestBody:
@@ -991,7 +1068,7 @@ paths:
               $ref: '#/components/schemas/ReqCreatePayment'
       responses:
         '201':
-          description: Payment record created
+          description: Stripe Checkout Session created or resumed
           content:
             application/json:
               schema:
@@ -1001,6 +1078,31 @@ paths:
                     type: string
                   data:
                     $ref: '#/components/schemas/ResPayment'
+
+  /payments/stripe/webhook:
+    post:
+      tags:
+        - Payments
+      summary: Receive signed Stripe Checkout events
+      description: Public callback authenticated with the Stripe-Signature header and raw request body. Duplicate event IDs are processed idempotently.
+      parameters:
+        - name: Stripe-Signature
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Event accepted or already processed
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /payments/order/{orderID}:
     get:
@@ -1202,6 +1304,42 @@ components:
           type: string
           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
+    ReqUpdateProfile:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        image:
+          type: string
+          maxLength: 2048
+          description: Uploaded image URL, or an empty string to remove the current image
+
+    ResProfile:
+      type: object
+      required:
+        - user_id
+        - image
+        - name
+        - email
+        - role
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        image:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [member, admin]
+
     # Addresses
     ReqAddress:
       type: object
@@ -1320,7 +1458,8 @@ components:
           format: uuid
         image_url:
           type: string
-          example: http://localhost:8333/products/uuid.png
+          description: Storage path resolved through the public SeaweedFS filer URL by the client
+          example: /products/uuid.png
 
     # Products
     ReqProduct:
@@ -1698,20 +1837,10 @@ components:
       type: object
       required:
         - order_id
-        - amount
-        - payment_method
       properties:
         order_id:
           type: string
           format: uuid
-        amount:
-          type: number
-          format: float
-          example: 5500.00
-        payment_method:
-          type: string
-          example: promptpay_qr
-          enum: [promptpay_qr, bank_transfer, credit_card, stripe, cash_on_delivery]
 
     ReqVerifyPayment:
       type: object
@@ -1739,6 +1868,17 @@ components:
           enum: [pending, paid, failed]
         payment_method:
           type: string
+          enum: [stripe]
+        provider_session_id:
+          type: string
+          description: Stripe Checkout Session ID
+        provider_payment_intent_id:
+          type: string
+          description: Stripe PaymentIntent ID, available after Stripe creates it
+        checkout_url:
+          type: string
+          format: uri
+          description: Stripe-hosted Checkout URL for pending payments
         paid_at:
           type: string
           format: date-time

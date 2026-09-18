@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useAdminProductVariantsQuery } from "../../hooks/queries/useCatalogQueries";
+import { AdminPageShell } from "../../components/admin/adminStyles";
+import { useConfirmDialog } from "../../components/ui/dialog-context";
 import {
-  AdminPageShell,
   dangerBtn,
   fieldStyle,
   ghostBtn,
@@ -9,14 +10,16 @@ import {
   primaryBtn,
   tdStyle,
   thStyle,
-  Toast,
   tableStyle,
-} from "../../components/admin/adminStyles";
+} from "../../components/admin/adminStyleTokens";
 import { AdminModal } from "../../components/admin/AdminModal";
 import { ImageUploader } from "../../components/admin/ImageUploader";
 import { useToast } from "../../hooks/useToast";
 import { resolveImageUrl } from "../../utils/image";
 import type { ProductVariant } from "../../api/types";
+import { AdminPagination } from "../../components/admin/AdminPagination";
+import { usePagination } from "../../hooks/usePagination";
+import { useAdminTablePageSize } from "../../hooks/useAdminTablePageSize";
 
 interface FormState {
   variant_id: string | null;
@@ -50,10 +53,14 @@ export const AdminProductVariants = () => {
   } = useAdminProductVariantsQuery();
   const { data: variants = [], isLoading } = variantsQuery;
   const { data: products = [] } = productsQuery;
+  const queryError = variantsQuery.error ?? productsQuery.error;
+  const { panelRef, pageSize } = useAdminTablePageSize(variants.length);
+  const variantPages = usePagination(variants, pageSize);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
+  const confirmDialog = useConfirmDialog();
 
   const productName = (id: string) => products.find((p) => p.product_id === id)?.product_name ?? "—";
 
@@ -125,7 +132,13 @@ export const AdminProductVariants = () => {
   };
 
   const handleDelete = async (variant: ProductVariant) => {
-    if (!window.confirm(`ลบ variant "${variant.variant_name}"?`)) return;
+    const confirmed = await confirmDialog({
+      title: "ลบตัวเลือกสินค้า",
+      description: `ต้องการลบ “${variant.variant_name}” ใช่หรือไม่?`,
+      confirmLabel: "ลบตัวเลือก",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteVariant.mutateAsync(variant.variant_id);
       showToast("ลบ variant แล้ว");
@@ -148,18 +161,18 @@ export const AdminProductVariants = () => {
           <h1
             style={{
               margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: 24,
               color: "var(--text)",
             }}
           >
-            Product Variants
+            ตัวเลือกสินค้า
           </h1>
           <p
             style={{
               margin: "4px 0 0",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 12.5,
               color: "var(--text-dim)",
             }}
@@ -172,17 +185,18 @@ export const AdminProductVariants = () => {
         </button>
       </div>
 
-      {isLoading ? (
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "var(--text-dim)" }}>
+      {queryError ? <p style={{ color: "#e85d5d" }}>{queryError.message}</p> : null}
+      {isLoading || productsQuery.isLoading ? (
+        <p style={{ fontFamily: "var(--font-sans)", color: "var(--text-dim)" }}>
           กำลังโหลด...
         </p>
       ) : (
-        <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid var(--line)" }}>
+        <div ref={panelRef} className="admin-table-panel" style={{ borderRadius: 10, border: "1px solid var(--line)" }}>
           <table style={tableStyle}>
             <thead>
               <tr>
                 <th style={thStyle}>รูป</th>
-                <th style={thStyle}>Variant</th>
+                <th style={thStyle}>ตัวเลือก</th>
                 <th style={thStyle}>สินค้า</th>
                 <th style={thStyle}>ราคา</th>
                 <th style={thStyle}>สต็อก</th>
@@ -191,7 +205,7 @@ export const AdminProductVariants = () => {
               </tr>
             </thead>
             <tbody>
-              {variants.map((variant) => (
+              {variantPages.items.map((variant) => (
                 <tr key={variant.variant_id} style={{ background: "var(--surface)" }}>
                   <td style={tdStyle}>
                     {variant.image_url ? (
@@ -246,6 +260,8 @@ export const AdminProductVariants = () => {
               ))}
             </tbody>
           </table>
+          {!variants.length ? <p style={{ padding: 16 }}>ยังไม่มีตัวเลือกสินค้า</p> : null}
+          <AdminPagination {...variantPages} onPageChange={variantPages.setPage} />
         </div>
       )}
 
@@ -300,7 +316,8 @@ export const AdminProductVariants = () => {
               <input
                 required
                 type="number"
-                min="0"
+                min="0.01"
+				step="0.01"
                 value={form.price}
                 onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
                 style={fieldStyle}
@@ -338,7 +355,6 @@ export const AdminProductVariants = () => {
         </form>
       </AdminModal>
 
-      {toast && <Toast message={toast.message} kind={toast.kind} />}
     </AdminPageShell>
   );
 };

@@ -19,7 +19,7 @@ interface DropdownItem {
 // ─── Data ────────────────────────────────────────────────────────────────────
 
 const NAV_LINKS: NavItem[] = [
-  { label: "Switch", href: "/switches" },
+  { label: "Switches", href: "/switches" },
   { label: "Keycaps", href: "/keycaps" },
   { label: "Accessories", href: "/accessories" },
   { label: "About", href: "/about" },
@@ -34,10 +34,10 @@ const KEYBOARD_ITEMS: DropdownItem[] = [
 const SEARCH_CHIPS = ["Gateron Yellow", "Hot-swap", "75% layout", "Wireless tri-mode", "PBT keycap"];
 
 const QUICK_LINKS = [
-  { emoji: "⌨️", label: "Mechanical Keyboard", href: "/keyboard" },
-  { emoji: "🧩", label: "Custom Keyboard", href: "/keyboard#custom" },
-  { emoji: "🔘", label: "Switch", href: "/switches" },
-  { emoji: "🔤", label: "Keycaps", href: "/keycaps" },
+  { emoji: "⌨️", label: "คีย์บอร์ดแมคคานิคอล", href: "/keyboard" },
+  { emoji: "🧩", label: "คีย์บอร์ดประกอบเอง", href: "/keyboard#custom" },
+  { emoji: "🔘", label: "สวิตช์", href: "/switches" },
+  { emoji: "🔤", label: "คีย์แคป", href: "/keycaps" },
 ];
 
 // ─── Icons (hoisted outside component — render-hoist-jsx) ────────────────────
@@ -337,7 +337,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
                 background: "none",
                 border: "none",
                 outline: "none",
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontSize: 22,
                 color: "var(--text)",
                 caretColor: "var(--accent)",
@@ -349,7 +349,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
                 background: "var(--accent)",
                 border: "none",
                 color: "#1c1810",
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontWeight: 700,
                 fontSize: 12,
                 padding: "8px 14px",
@@ -366,7 +366,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
                 background: "none",
                 border: "1px solid var(--line)",
                 color: "var(--text-dim)",
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontSize: 11,
                 padding: "6px 10px",
                 borderRadius: 5,
@@ -381,7 +381,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
           <div style={{ marginTop: 22 }}>
             <p
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontSize: 11,
                 color: "var(--text-dim)",
                 textTransform: "uppercase",
@@ -397,7 +397,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
                   key={chip}
                   onClick={() => runSearch(chip)}
                   style={{
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "var(--font-sans)",
                     fontSize: 12.5,
                     background: "var(--surface)",
                     border: "1px solid var(--line)",
@@ -423,7 +423,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
 
             <p
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontSize: 11,
                 color: "var(--text-dim)",
                 textTransform: "uppercase",
@@ -499,6 +499,7 @@ export const Navbar = memo(() => {
   return (
     <>
       <header
+        className="kw-site-header"
         style={{
           position: "sticky",
           top: 0,
@@ -513,6 +514,7 @@ export const Navbar = memo(() => {
         }}
       >
         <nav
+          className="keywerk-nav"
           style={{
             width: "100%",
             display: "flex",
@@ -524,9 +526,10 @@ export const Navbar = memo(() => {
           }}
         >
           <Link
+            className="keywerk-nav-logo"
             to="/"
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: 19,
               letterSpacing: "-0.02em",
@@ -542,6 +545,7 @@ export const Navbar = memo(() => {
           </Link>
 
           <div
+            className="keywerk-nav-links"
             style={{
               flex: 1,
               display: "flex",
@@ -589,7 +593,7 @@ export const Navbar = memo(() => {
             })}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div className="keywerk-nav-actions" style={{ display: "flex", alignItems: "center", gap: 20 }}>
             {isAdmin && (
               <Link
                 to="/admin"
@@ -597,7 +601,7 @@ export const Navbar = memo(() => {
                 style={{
                   color: pathname.startsWith("/admin") ? "var(--accent)" : "var(--text-dim)",
                   textDecoration: "none",
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "var(--font-sans)",
                   fontWeight: 700,
                   fontSize: 13,
                   letterSpacing: "0.03em",
@@ -618,7 +622,7 @@ export const Navbar = memo(() => {
                     : "var(--text-dim)";
                 }}
               >
-                Admin
+                ผู้ดูแล
               </Link>
             )}
 
@@ -710,7 +714,7 @@ export const Navbar = memo(() => {
                     right: -8,
                     background: "var(--accent)",
                     color: "#1c1810",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    fontFamily: "var(--font-sans)",
                     fontWeight: 700,
                     fontSize: 10,
                     lineHeight: 1,

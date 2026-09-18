@@ -45,7 +45,7 @@ func (h *addressHandler) CreateAddress(c *fiber.Ctx) error {
 
 	err = h.addressService.CreateAddress(req, userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"message": "address created successfully"})
@@ -59,7 +59,7 @@ func (h *addressHandler) GetAddresses(c *fiber.Ctx) error {
 
 	addresses, err := h.addressService.GetAddressesByUserID(userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{
@@ -77,7 +77,7 @@ func (h *addressHandler) GetAddressByID(c *fiber.Ctx) error {
 	addrID := c.Params("addressID")
 	addr, err := h.addressService.GetAddressByID(addrID, userID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{
@@ -105,7 +105,7 @@ func (h *addressHandler) UpdateAddress(c *fiber.Ctx) error {
 
 	err = h.addressService.UpdateAddress(req, userID, addrID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "address updated successfully"})
@@ -120,7 +120,7 @@ func (h *addressHandler) DeleteAddress(c *fiber.Ctx) error {
 	addrID := c.Params("addressID")
 	err = h.addressService.DeleteAddress(addrID, userID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "address deleted successfully"})

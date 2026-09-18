@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useAdminProductsQuery, useCategoriesQuery, useBrandsQuery } from "../../hooks/queries/useCatalogQueries";
+import { AdminPageShell } from "../../components/admin/adminStyles";
+import { useConfirmDialog } from "../../components/ui/dialog-context";
 import {
-  AdminPageShell,
   dangerBtn,
   fieldStyle,
   ghostBtn,
@@ -9,11 +10,13 @@ import {
   primaryBtn,
   tdStyle,
   thStyle,
-  Toast,
   tableStyle,
-} from "../../components/admin/adminStyles";
+} from "../../components/admin/adminStyleTokens";
 import { AdminModal } from "../../components/admin/AdminModal";
 import { useToast } from "../../hooks/useToast";
+import { AdminPagination } from "../../components/admin/AdminPagination";
+import { usePagination } from "../../hooks/usePagination";
+import { useAdminTablePageSize } from "../../hooks/useAdminTablePageSize";
 
 interface FormState {
   id: string | null;
@@ -39,12 +42,18 @@ export const AdminProducts = () => {
     deleteProduct,
   } = useAdminProductsQuery();
   const { data: products = [] } = productsQuery;
-  const { data: categories = [] } = useCategoriesQuery();
-  const { data: brands = [] } = useBrandsQuery();
+  const categoriesQuery = useCategoriesQuery();
+  const brandsQuery = useBrandsQuery();
+  const categories = categoriesQuery.data ?? [];
+  const brands = brandsQuery.data ?? [];
+  const queryError = productsQuery.error ?? categoriesQuery.error ?? brandsQuery.error;
+  const { panelRef, pageSize } = useAdminTablePageSize(products.length);
+  const productPages = usePagination(products, pageSize);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
+  const confirmDialog = useConfirmDialog();
 
   const catName = (id: string) => categories.find((c) => c.id === id)?.name ?? "—";
   const brandName = (id: string) => brands.find((b) => b.id === id)?.name ?? "—";
@@ -92,7 +101,13 @@ export const AdminProducts = () => {
   };
 
   const handleDelete = async (product: (typeof products)[number]) => {
-    if (!window.confirm(`ลบสินค้า "${product.product_name}"?`)) return;
+    const confirmed = await confirmDialog({
+      title: "ลบสินค้า",
+      description: `ต้องการลบ “${product.product_name}” และข้อมูลที่เกี่ยวข้องใช่หรือไม่?`,
+      confirmLabel: "ลบสินค้า",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteProduct.mutateAsync(product.product_id);
       showToast("ลบสินค้าแล้ว");
@@ -115,18 +130,18 @@ export const AdminProducts = () => {
           <h1
             style={{
               margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: 24,
               color: "var(--text)",
             }}
           >
-            Products
+            สินค้า
           </h1>
           <p
             style={{
               margin: "4px 0 0",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 12.5,
               color: "var(--text-dim)",
             }}
@@ -139,12 +154,13 @@ export const AdminProducts = () => {
         </button>
       </div>
 
-      {productsQuery.isLoading ? (
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "var(--text-dim)" }}>
+      {queryError ? <p style={{ color: "#e85d5d" }}>{queryError.message}</p> : null}
+      {productsQuery.isLoading || categoriesQuery.isLoading || brandsQuery.isLoading ? (
+        <p style={{ fontFamily: "var(--font-sans)", color: "var(--text-dim)" }}>
           กำลังโหลด...
         </p>
       ) : (
-        <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid var(--line)" }}>
+        <div ref={panelRef} className="admin-table-panel" style={{ borderRadius: 10, border: "1px solid var(--line)" }}>
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -156,7 +172,7 @@ export const AdminProducts = () => {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
+              {productPages.items.map((product) => (
                 <tr key={product.product_id} style={{ background: "var(--surface)" }}>
                   <td style={tdStyle}>{product.product_name}</td>
                   <td style={tdStyle}>{catName(product.category_id)}</td>
@@ -174,6 +190,8 @@ export const AdminProducts = () => {
               ))}
             </tbody>
           </table>
+          {!products.length ? <p style={{ padding: 16 }}>ยังไม่มีสินค้า</p> : null}
+          <AdminPagination {...productPages} onPageChange={productPages.setPage} />
         </div>
       )}
 
@@ -247,7 +265,6 @@ export const AdminProducts = () => {
         </form>
       </AdminModal>
 
-      {toast && <Toast message={toast.message} kind={toast.kind} />}
     </AdminPageShell>
   );
 };

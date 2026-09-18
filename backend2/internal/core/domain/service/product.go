@@ -42,6 +42,9 @@ func (s *productService) CreateProduct(reqProduct dto.ReqProduct) error {
 
 	err := s.productRepo.Create(product)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return errs.BadRequest("category or brand not found", err)
+		}
 		msg := fmt.Sprintf("cannot create product %s", reqProduct.Name)
 		return errs.Internal(msg, err)
 	}
@@ -49,6 +52,16 @@ func (s *productService) CreateProduct(reqProduct dto.ReqProduct) error {
 }
 
 func (s *productService) ListProducts(filter dto.ProductFilterQuery) ([]dto.ResProduct, error) {
+	if filter.CategoryID != "" {
+		if err := validateUUID(filter.CategoryID, "category id"); err != nil {
+			return nil, err
+		}
+	}
+	if filter.BrandID != "" {
+		if err := validateUUID(filter.BrandID, "brand id"); err != nil {
+			return nil, err
+		}
+	}
 	products, err := s.productRepo.GetAll(filter)
 	if err != nil {
 		return nil, errs.Internal("cannot get products", err)
@@ -70,6 +83,9 @@ func (s *productService) ListProducts(filter dto.ProductFilterQuery) ([]dto.ResP
 }
 
 func (s *productService) FindProduct(productID string) (*dto.ResProduct, error) {
+	if err := validateUUID(productID, "product id"); err != nil {
+		return nil, err
+	}
 	product, err := s.productRepo.Get(productID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -91,6 +107,9 @@ func (s *productService) FindProduct(productID string) (*dto.ResProduct, error) 
 }
 
 func (s *productService) UpdateProduct(productID string, updateProduct dto.ReqUpdateProduct) error {
+	if err := validateUUID(productID, "product id"); err != nil {
+		return err
+	}
 	product, err := s.productRepo.Get(productID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -115,6 +134,9 @@ func (s *productService) UpdateProduct(productID string, updateProduct dto.ReqUp
 
 	err = s.productRepo.Update(productID, *product)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return errs.BadRequest("category or brand not found", err)
+		}
 		msg := fmt.Sprintf("cannot update product %s", product.Name)
 		return errs.Internal(msg, err)
 	}
@@ -123,6 +145,9 @@ func (s *productService) UpdateProduct(productID string, updateProduct dto.ReqUp
 }
 
 func (s *productService) DeleteProduct(productID string) error {
+	if err := validateUUID(productID, "product id"); err != nil {
+		return err
+	}
 	_, err := s.productRepo.Get(productID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -133,6 +158,9 @@ func (s *productService) DeleteProduct(productID string) error {
 
 	err = s.productRepo.Delete(productID)
 	if err != nil {
+		if isForeignKeyViolation(err) {
+			return errs.Conflict("cannot delete a product referenced by an order", err)
+		}
 		msg := fmt.Sprintf("cannot delete product %s", productID)
 		return errs.Internal(msg, err)
 	}

@@ -5,15 +5,15 @@ import { useCartStore } from "../stores/cartStore";
 // Re-export for backwards compatibility — components can still use useCart()
 export function useCart() {
   const { isLoggedIn } = useAuthStore();
-  const { cart, loading, refreshCart, clearCart } = useCartStore();
+  const { cart, loading, refreshCart, resetCart } = useCartStore();
 
   useEffect(() => {
     if (isLoggedIn) {
       refreshCart();
     } else {
-      clearCart();
+      resetCart();
     }
-  }, [isLoggedIn, refreshCart, clearCart]);
+  }, [isLoggedIn, refreshCart, resetCart]);
 
   return {
     cart,

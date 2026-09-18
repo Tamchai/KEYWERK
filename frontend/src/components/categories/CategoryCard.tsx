@@ -6,8 +6,9 @@ interface CategoryCardProps {
 }
 
 export const CategoryCard = ({ image, label, description, href }: CategoryCardProps) => (
-  <a
-    href={href}
+  <Link
+    className="kw-category-card"
+    to={href}
     style={{
       flex: "0 0 auto",
       width: 260,
@@ -57,7 +58,7 @@ export const CategoryCard = ({ image, label, description, href }: CategoryCardPr
       >
         <span
           style={{
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "var(--font-sans)",
             fontWeight: 700,
             fontSize: 18,
             color: "var(--text)",
@@ -70,7 +71,7 @@ export const CategoryCard = ({ image, label, description, href }: CategoryCardPr
       <p
         style={{
           margin: 0,
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "var(--font-sans)",
           fontSize: 12,
           color: "var(--text-dim)",
         }}
@@ -78,7 +79,8 @@ export const CategoryCard = ({ image, label, description, href }: CategoryCardPr
         {description}
       </p>
     </div>
-  </a>
+  </Link>
 );
 
 export default CategoryCard;
+import { Link } from "react-router-dom";

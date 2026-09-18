@@ -24,6 +24,7 @@ import {
 } from "../../api/admin";
 import type { ProductPayload, ProductVariantPayload, BrandPayload, CategoryPayload } from "../../api/admin";
 import { buildDisplayProducts } from "../../utils/catalog";
+import { resolveCategoryFilter } from "../../utils/categoryFilter";
 import type { DisplayProduct } from "../../api/types";
 
 // ─── Query Keys ──────────────────────────────────────────────────────────────
@@ -57,11 +58,12 @@ export function useBrandsQuery() {
   });
 }
 
-export function useProductVariantsQuery() {
+export function useProductVariantsQuery(enabled = true) {
   return useQuery({
     queryKey: queryKeys.productVariants,
     queryFn: listProductVariants,
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -85,11 +87,7 @@ export function useDisplayProductsQuery(options: UseDisplayProductsOptions = {})
   const brands = brandsQuery.data ?? [];
   const variants = variantsQuery.data ?? [];
 
-  const categoryId = categoryName
-    ? categories.find(
-        (c) => c.name.trim().toLowerCase() === categoryName.trim().toLowerCase(),
-      )?.id
-    : undefined;
+  const { categoryId, canQuery: categoryCanQuery } = resolveCategoryFilter(categoryName, categories);
 
   const productsQuery = useQuery({
     queryKey: queryKeys.products({ category_id: categoryId, search: search?.trim() || undefined }),
@@ -98,7 +96,7 @@ export function useDisplayProductsQuery(options: UseDisplayProductsOptions = {})
         category_id: categoryId,
         search: search?.trim() || undefined,
       }),
-    enabled: categoriesQuery.isSuccess && brandsQuery.isSuccess && variantsQuery.isSuccess,
+    enabled: categoriesQuery.isSuccess && brandsQuery.isSuccess && variantsQuery.isSuccess && categoryCanQuery,
     staleTime: 2 * 60 * 1000,
   });
 

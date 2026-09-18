@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -42,13 +43,14 @@ func (h *productHandler) CreateProduct(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request body"})
 	}
 
+	req.Name = strings.TrimSpace(req.Name)
 	if err := h.validator.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return errs.BadRequest("invalid product information", err)
 	}
 
 	err = h.productService.CreateProduct(req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	msg := fmt.Sprintf("created product %s successfully", req.Name)
@@ -60,10 +62,7 @@ func (h *productHandler) FindProductByID(c *fiber.Ctx) error {
 
 	product, err := h.productService.FindProduct(productID)
 	if err != nil {
-		if appErr, ok := err.(*errs.AppError); ok {
-			return c.Status(appErr.Code).JSON(fiber.Map{"message": appErr.Message})
-		}
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(product)
@@ -75,7 +74,7 @@ func (h *productHandler) ListProducts(c *fiber.Ctx) error {
 
 	listProduct, err := h.productService.ListProducts(filter)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(listProduct)
@@ -89,10 +88,14 @@ func (h *productHandler) UpdateProduct(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request body"})
 	}
+	req.Name = strings.TrimSpace(req.Name)
+	if err := h.validator.Struct(req); err != nil {
+		return errs.BadRequest("invalid product information", err)
+	}
 
 	err = h.productService.UpdateProduct(productID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	msg := fmt.Sprintf("updated product %s successfully", req.Name)
@@ -104,7 +107,7 @@ func (h *productHandler) DeleteProduct(c *fiber.Ctx) error {
 
 	err := h.productService.DeleteProduct(productID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)

@@ -1,12 +1,12 @@
 import { apiFetch } from "./client";
-import type { Cart, MessageResponse, CartItem } from "./types";
+import type { Cart, MessageResponse } from "./types";
 
 export function getCart() {
   return apiFetch<Cart>("/cart");
 }
 
 export function addToCart(variantId: string, quantity: number) {
-  return apiFetch<CartItem>("/cart/items", {
+  return apiFetch<MessageResponse>("/cart/items", {
     method: "POST",
     body: JSON.stringify({ variant_id: variantId, quantity }),
   });

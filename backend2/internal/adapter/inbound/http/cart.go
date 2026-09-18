@@ -35,7 +35,7 @@ func (h *cartHandler) GetCart(c *fiber.Ctx) error {
 
 	cart, err := h.cartService.GetCart(userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(cart)
@@ -59,7 +59,7 @@ func (h *cartHandler) AddToCart(c *fiber.Ctx) error {
 
 	err = h.cartService.AddToCart(userID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "item added to cart successfully"})
@@ -84,7 +84,7 @@ func (h *cartHandler) UpdateCartItem(c *fiber.Ctx) error {
 
 	err = h.cartService.UpdateCartItem(userID, cartItemID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "cart item updated successfully"})
@@ -99,7 +99,7 @@ func (h *cartHandler) RemoveCartItem(c *fiber.Ctx) error {
 	cartItemID := c.Params("cartItemID")
 	err = h.cartService.RemoveCartItem(userID, cartItemID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "cart item removed successfully"})
@@ -113,7 +113,7 @@ func (h *cartHandler) ClearCart(c *fiber.Ctx) error {
 
 	err = h.cartService.ClearCart(userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "cart cleared successfully"})

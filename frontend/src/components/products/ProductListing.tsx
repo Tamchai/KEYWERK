@@ -13,7 +13,7 @@ interface ProductListingProps {
 }
 
 const mono: CSSProperties = {
-  fontFamily: "'JetBrains Mono', monospace",
+  fontFamily: "var(--font-sans)",
 };
 
 export const ProductListing = ({

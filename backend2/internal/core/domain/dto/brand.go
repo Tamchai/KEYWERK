@@ -6,10 +6,10 @@ type Brand struct {
 }
 
 type ResBrand struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID   string `json:"brand_id"`
+	Name string `json:"brand_name"`
 }
 
 type ReqBrand struct {
-	Name string `json:"name" validate:"required"`
+	Name string `json:"brand_name" validate:"required"`
 }

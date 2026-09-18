@@ -23,7 +23,7 @@ function SearchResults() {
         <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <h1
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: "clamp(24px, 4vw, 32px)",
               color: "var(--text)",
@@ -34,7 +34,7 @@ function SearchResults() {
           </h1>
           <p
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 14,
               color: "var(--text-dim)",
               margin: 0,
@@ -62,7 +62,7 @@ function SearchResults() {
             style={{
               maxWidth: 1280,
               margin: "0 auto",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               color: "var(--text-dim)",
             }}
           >

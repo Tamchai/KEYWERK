@@ -11,23 +11,24 @@ interface AdminModalProps {
 const overlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(10,9,6,0.72)",
+  background: "rgba(4,5,3,0.76)",
+  backdropFilter: "blur(10px)",
   display: "flex",
-  alignItems: "flex-start",
+  alignItems: "center",
   justifyContent: "center",
-  padding: "60px 20px 40px",
+  padding: "40px",
   overflowY: "auto",
   zIndex: 100,
 };
 
 const cardStyle: CSSProperties = {
   width: "100%",
-  maxWidth: 560,
-  background: "var(--surface)",
-  border: "1px solid var(--line)",
-  borderRadius: 12,
-  padding: 24,
-  boxShadow: "0 18px 48px rgba(0,0,0,.5)",
+  maxWidth: 620,
+  background: "linear-gradient(145deg, var(--surface-top), var(--surface))",
+  border: "1px solid rgba(242,194,48,.22)",
+  borderRadius: 24,
+  padding: 28,
+  boxShadow: "0 32px 90px rgba(0,0,0,.62), inset 0 1px rgba(255,255,255,.05)",
 };
 
 export const AdminModal = ({ open, title, onClose, footer, children }: AdminModalProps) => {
@@ -41,15 +42,15 @@ export const AdminModal = ({ open, title, onClose, footer, children }: AdminModa
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 18,
+            marginBottom: 24,
           }}
         >
           <h2
             style={{
               margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
-              fontSize: 18,
+              fontSize: 22,
               color: "var(--text)",
             }}
           >
@@ -62,8 +63,10 @@ export const AdminModal = ({ open, title, onClose, footer, children }: AdminModa
               background: "none",
               border: "none",
               color: "var(--text-dim)",
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 20,
+              fontFamily: "var(--font-sans)",
+              fontSize: 22,
+              width: 38,
+              height: 38,
               cursor: "pointer",
               lineHeight: 1,
             }}

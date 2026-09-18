@@ -39,6 +39,9 @@ func (s *cartService) GetCart(userID string) (*dto.ResCart, error) {
 	if err != nil {
 		return nil, errs.Internal("cannot get cart items", err)
 	}
+	if items == nil {
+		items = make([]dto.ResCartItem, 0)
+	}
 
 	var totalPrice float64
 	var totalItems int
@@ -60,6 +63,9 @@ func (s *cartService) GetCart(userID string) (*dto.ResCart, error) {
 }
 
 func (s *cartService) AddToCart(userID string, req dto.ReqAddToCart) error {
+	if err := validateUUID(req.VariantID, "variant id"); err != nil {
+		return err
+	}
 	variant, err := s.productVariantRepo.FindByID(req.VariantID)
 	if err != nil {
 		return errs.NotFound("product variant not found", err)
@@ -107,18 +113,24 @@ func (s *cartService) AddToCart(userID string, req dto.ReqAddToCart) error {
 }
 
 func (s *cartService) UpdateCartItem(userID string, cartItemID string, req dto.ReqUpdateCartItem) error {
+	if err := validateUUID(cartItemID, "cart item id"); err != nil {
+		return err
+	}
 	cart, err := s.cartRepo.GetOrCreateCart(userID)
 	if err != nil {
 		return errs.Internal("cannot get cart", err)
 	}
 
 	item, err := s.cartRepo.FindCartItemByID(cartItemID)
-	if err != nil || item == nil {
-		return errs.NotFound("cart item not found", err)
+	if err != nil {
+		return errs.Internal("cannot get cart item", err)
+	}
+	if item == nil {
+		return errs.NotFound("cart item not found", nil)
 	}
 
 	if item.CartID != cart.ID {
-		return errs.Unauthorized("unauthorized cart item access", nil)
+		return errs.Forbidden("cart item access denied", nil)
 	}
 
 	variant, err := s.productVariantRepo.FindByID(item.VariantID)
@@ -139,18 +151,25 @@ func (s *cartService) UpdateCartItem(userID string, cartItemID string, req dto.R
 }
 
 func (s *cartService) RemoveCartItem(userID string, cartItemID string) error {
+	if err := validateUUID(cartItemID, "cart item id"); err != nil {
+		return err
+	}
 	cart, err := s.cartRepo.GetOrCreateCart(userID)
 	if err != nil {
 		return errs.Internal("cannot get cart", err)
 	}
 
 	item, err := s.cartRepo.FindCartItemByID(cartItemID)
-	if err != nil || item == nil {
-		return errs.NotFound("cart item not found", err)
+	if err != nil {
+		return errs.Internal("cannot get cart item", err)
+	}
+	if item == nil {
+		// DELETE is idempotent: retrying a successful deletion keeps the cart unchanged.
+		return nil
 	}
 
 	if item.CartID != cart.ID {
-		return errs.Unauthorized("unauthorized cart item access", nil)
+		return errs.Forbidden("cart item access denied", nil)
 	}
 
 	err = s.cartRepo.RemoveItem(cartItemID)

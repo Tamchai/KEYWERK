@@ -2,8 +2,9 @@ package http
 
 import (
 	"fmt"
-	"log"
+	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/keywerk/internal/core/domain/dto"
 	"github.com/keywerk/internal/core/domain/errs"
@@ -20,10 +21,11 @@ type BrandHandler interface {
 
 type brandHandler struct {
 	brandService service.BrandService
+	validator    *validator.Validate
 }
 
 func NewBrandHandler(brandService service.BrandService) BrandHandler {
-	return &brandHandler{brandService: brandService}
+	return &brandHandler{brandService: brandService, validator: validator.New()}
 }
 
 func (h *brandHandler) CreateBrand(c *fiber.Ctx) error {
@@ -32,12 +34,16 @@ func (h *brandHandler) CreateBrand(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid body"})
+		return errs.BadRequest("invalid request body", err)
+	}
+	req.Name = strings.TrimSpace(req.Name)
+	if err := h.validator.Struct(req); err != nil {
+		return errs.BadRequest("brand name is required", err)
 	}
 
 	err = h.brandService.CreateBrand(req)
 	if err != nil {
-		return errs.Internal("can't create brand", err)
+		return err
 	}
 
 	msg := fmt.Sprintf("created brand %v successfully", req.Name)
@@ -51,21 +57,7 @@ func (h *brandHandler) GetBrandByID(c *fiber.Ctx) error {
 
 	brand, err := h.brandService.FindBrandByID(brandID)
 	if err != nil {
-
-		if appErr, ok := err.(*errs.AppError); ok {
-			if appErr.Code == fiber.StatusInternalServerError {
-				log.Printf("[ERROR] %v", appErr.Unwrap())
-			}
-
-			return c.Status(appErr.Code).JSON(fiber.Map{
-				"message": appErr.Message,
-			})
-		}
-
-		log.Printf("[ERROR] %v", err)
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"message": "Failed to fetch brand",
-		})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(brand)
@@ -75,7 +67,7 @@ func (h *brandHandler) GetAllBrands(c *fiber.Ctx) error {
 
 	brands, err := h.brandService.ListBrands()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "can't find brands"})
+		return err
 	}
 	return c.Status(fiber.StatusOK).JSON(brands)
 }
@@ -88,12 +80,16 @@ func (h *brandHandler) UpdateBrand(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid body"})
+		return errs.BadRequest("invalid request body", err)
+	}
+	req.Name = strings.TrimSpace(req.Name)
+	if err := h.validator.Struct(req); err != nil {
+		return errs.BadRequest("brand name is required", err)
 	}
 
 	err = h.brandService.UpdateBrand(brandID, req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "can't update brand"})
+		return err
 	}
 
 	msg := fmt.Sprintf("update brand %v successfully", req.Name)
@@ -107,10 +103,8 @@ func (h *brandHandler) DeleteBrand(c *fiber.Ctx) error {
 
 	err := h.brandService.DeleteBrand(brandID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "can't delete"})
+		return err
 	}
 
-	msg := fmt.Sprintf("deleted %v", brandID)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": msg})
+	return c.SendStatus(fiber.StatusNoContent)
 }

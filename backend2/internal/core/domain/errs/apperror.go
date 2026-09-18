@@ -60,3 +60,19 @@ func NotFound(message string, err error) *AppError {
 		Err:     err,
 	}
 }
+
+func Conflict(message string, err error) *AppError {
+	return &AppError{
+		Code:    http.StatusConflict,
+		Message: message,
+		Err:     err,
+	}
+}
+
+func Unavailable(message string, err error) *AppError {
+	return &AppError{
+		Code:    http.StatusServiceUnavailable,
+		Message: message,
+		Err:     err,
+	}
+}

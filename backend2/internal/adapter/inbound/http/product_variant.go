@@ -2,10 +2,12 @@ package http
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/keywerk/internal/core/domain/dto"
+	"github.com/keywerk/internal/core/domain/errs"
 	"github.com/keywerk/internal/core/domain/service"
 )
 
@@ -38,13 +40,14 @@ func (h *productVariantHandler) CreateProductVariant(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request body"})
 	}
 
+	req.Name = strings.TrimSpace(req.Name)
 	if err := h.validator.Struct(req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return errs.BadRequest("invalid product variant information", err)
 	}
 
 	err = h.productVariantService.CreateProductVariant(req)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	msg := fmt.Sprintf("created variant %s successfully", req.Name)
@@ -56,7 +59,7 @@ func (h *productVariantHandler) FindProductVariantByID(c *fiber.Ctx) error {
 
 	res, err := h.productVariantService.FindProductVariantByID(variantID)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(res)
@@ -71,7 +74,7 @@ func (h *productVariantHandler) GetVariantsByProductID(c *fiber.Ctx) error {
 
 	variants, err := h.productVariantService.GetVariantsByProductID(productID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(variants)
@@ -80,7 +83,7 @@ func (h *productVariantHandler) GetVariantsByProductID(c *fiber.Ctx) error {
 func (h *productVariantHandler) GetAllProductVariants(c *fiber.Ctx) error {
 	variants, err := h.productVariantService.GetAllProductVariants()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(variants)
@@ -94,10 +97,14 @@ func (h *productVariantHandler) UpdateProductVariant(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request body"})
 	}
+	req.Name = strings.TrimSpace(req.Name)
+	if err := h.validator.Struct(req); err != nil {
+		return errs.BadRequest("invalid product variant information", err)
+	}
 
 	err = h.productVariantService.UpdateProductVariant(variantID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "variant updated successfully"})
@@ -108,7 +115,7 @@ func (h *productVariantHandler) DeleteProductVariant(c *fiber.Ctx) error {
 
 	err := h.productVariantService.DeleteProductVariant(variantID)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.SendStatus(fiber.StatusNoContent)

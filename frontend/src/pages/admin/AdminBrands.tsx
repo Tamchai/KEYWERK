@@ -2,8 +2,9 @@ import { useState, type FormEvent } from "react";
 import { useAdminBrandsQuery } from "../../hooks/queries/useCatalogQueries";
 import type { Brand } from "../../api/types";
 import { AdminModal } from "../../components/admin/AdminModal";
+import { AdminPageShell } from "../../components/admin/adminStyles";
+import { useConfirmDialog } from "../../components/ui/dialog-context";
 import {
-  AdminPageShell,
   dangerBtn,
   fieldStyle,
   ghostBtn,
@@ -11,10 +12,12 @@ import {
   primaryBtn,
   tdStyle,
   thStyle,
-  Toast,
   tableStyle,
-} from "../../components/admin/adminStyles";
+} from "../../components/admin/adminStyleTokens";
 import { useToast } from "../../hooks/useToast";
+import { AdminPagination } from "../../components/admin/AdminPagination";
+import { usePagination } from "../../hooks/usePagination";
+import { useAdminTablePageSize } from "../../hooks/useAdminTablePageSize";
 
 interface FormState {
   id: string | null;
@@ -31,10 +34,13 @@ export const AdminBrands = () => {
     deleteBrand,
   } = useAdminBrandsQuery();
   const { data: brands = [], isLoading } = brandsQuery;
+  const { panelRef, pageSize } = useAdminTablePageSize(brands.length);
+  const brandPages = usePagination(brands, pageSize);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
+  const confirmDialog = useConfirmDialog();
 
   const openCreate = () => {
     setForm(EMPTY_FORM);
@@ -63,7 +69,13 @@ export const AdminBrands = () => {
   };
 
   const handleDelete = async (brand: Brand) => {
-    if (!window.confirm(`ลบแบรนด์ "${brand.name}"?`)) return;
+    const confirmed = await confirmDialog({
+      title: "ลบแบรนด์",
+      description: `ต้องการลบ “${brand.name}” ใช่หรือไม่? การดำเนินการนี้ย้อนกลับไม่ได้`,
+      confirmLabel: "ลบแบรนด์",
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await deleteBrand.mutateAsync(brand.id);
       showToast("ลบแบรนด์แล้ว");
@@ -86,18 +98,18 @@ export const AdminBrands = () => {
           <h1
             style={{
               margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: 24,
               color: "var(--text)",
             }}
           >
-            Brands
+            แบรนด์
           </h1>
           <p
             style={{
               margin: "4px 0 0",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 12.5,
               color: "var(--text-dim)",
             }}
@@ -110,12 +122,13 @@ export const AdminBrands = () => {
         </button>
       </div>
 
+      {brandsQuery.isError ? <p style={{ color: "#e85d5d" }}>{brandsQuery.error.message}</p> : null}
       {isLoading ? (
-        <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "var(--text-dim)" }}>
+        <p style={{ fontFamily: "var(--font-sans)", color: "var(--text-dim)" }}>
           กำลังโหลด...
         </p>
       ) : (
-        <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid var(--line)" }}>
+        <div ref={panelRef} className="admin-table-panel" style={{ borderRadius: 10, border: "1px solid var(--line)" }}>
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -124,7 +137,7 @@ export const AdminBrands = () => {
               </tr>
             </thead>
             <tbody>
-              {brands.map((brand) => (
+              {brandPages.items.map((brand) => (
                 <tr key={brand.id} style={{ background: "var(--surface)" }}>
                   <td style={tdStyle}>{brand.name}</td>
                   <td style={{ ...tdStyle, textAlign: "right", whiteSpace: "nowrap" }}>
@@ -139,6 +152,8 @@ export const AdminBrands = () => {
               ))}
             </tbody>
           </table>
+          {!brands.length ? <p style={{ padding: 16 }}>ยังไม่มีแบรนด์</p> : null}
+          <AdminPagination {...brandPages} onPageChange={brandPages.setPage} />
         </div>
       )}
 
@@ -174,7 +189,6 @@ export const AdminBrands = () => {
         </form>
       </AdminModal>
 
-      {toast && <Toast message={toast.message} kind={toast.kind} />}
     </AdminPageShell>
   );
 };

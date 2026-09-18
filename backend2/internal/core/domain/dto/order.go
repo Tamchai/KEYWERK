@@ -11,6 +11,30 @@ const (
 	OrderStatusCancelled  OrderStatus = "cancelled"
 )
 
+func (s OrderStatus) IsValid() bool {
+	switch s {
+	case OrderStatusPending, OrderStatusProcessing, OrderStatusShipped, OrderStatusCancelled:
+		return true
+	default:
+		return false
+	}
+}
+
+func CanTransitionOrderStatus(from, to OrderStatus) bool {
+	if from == to {
+		return true
+	}
+
+	switch from {
+	case OrderStatusPending:
+		return to == OrderStatusProcessing || to == OrderStatusCancelled
+	case OrderStatusProcessing:
+		return to == OrderStatusShipped || to == OrderStatusCancelled
+	default:
+		return false
+	}
+}
+
 type Order struct {
 	ID             string
 	UserID         string

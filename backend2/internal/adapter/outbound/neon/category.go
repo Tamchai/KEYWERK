@@ -18,12 +18,13 @@ func NewNeonCategoryRepository(db *sqlx.DB) port.CategoryRepository {
 
 func (r *neonCategoryRepository) GetAll() ([]dto.Category, error) {
 	var categories []dto.Category
-	query := `SELECT category_id, name FROM categories`
+	query := `SELECT category_id, name FROM categories ORDER BY name ASC, category_id ASC`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var c dto.Category
@@ -35,7 +36,7 @@ func (r *neonCategoryRepository) GetAll() ([]dto.Category, error) {
 		categories = append(categories, c)
 	}
 
-	return categories, nil
+	return categories, rows.Err()
 }
 
 func (r *neonCategoryRepository) Get(categoryID string) (*dto.Category, error) {
@@ -77,7 +78,7 @@ func (r *neonCategoryRepository) Save(category dto.Category) error {
 
 func (r *neonCategoryRepository) Update(categoryID string, category dto.Category) error {
 	query := `UPDATE categories SET name = $1 WHERE category_id = $2`
-	result, err := r.db.Exec(query, category.Name, category.ID)
+	result, err := r.db.Exec(query, category.Name, categoryID)
 
 	if err != nil {
 		return err

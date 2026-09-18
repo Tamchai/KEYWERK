@@ -7,11 +7,11 @@ import accessoriesImg from "../../assets/Accessories.png";
 import allImg from "../../assets/All.png";
 
 const CATEGORIES = [
-  { image: keyboardImg, label: "Keyboard", description: "Mechanical & Magnetic keyboard", href: "#keyboard" },
-  { image: switchImg, label: "Switches", description: "Mechanical & Magnetic Switches", href: "#switches" },
-  { image: keycapImg, label: "Keycaps", description: "Artisan & Profile", href: "#keycaps" },
-  { image: accessoriesImg, label: "Accessories", description: "Lube Station & Tools", href: "#accessories" },
-  { image: allImg, label: "ALL PRODUCTS", description: "Keywerk Store", href: "#all" },
+  { image: keyboardImg, label: "Keyboard", description: "แมคคานิคอลและแมกเนติก", href: "/keyboard" },
+  { image: switchImg, label: "Switch", description: "สวิตช์แมคคานิคอลและแมกเนติก", href: "/switches" },
+  { image: keycapImg, label: "Keycap", description: "งานอาร์ติซานและโปรไฟล์ต่าง ๆ", href: "/keycaps" },
+  { image: accessoriesImg, label: "Accessory", description: "ชุดหล่อลื่นและเครื่องมือ", href: "/accessories" },
+  { image: allImg, label: "All Product", description: "ร้าน KEYWERK", href: "/search" },
 ];
 
 export const CategorySection = () => {
@@ -63,6 +63,7 @@ export const CategorySection = () => {
 
   return (
     <section
+      className="kw-section kw-categories"
       style={{
         background: "var(--bg)",
         width: "100vw",
@@ -88,32 +89,32 @@ export const CategorySection = () => {
             <p
               style={{
                 margin: "0 0 6px",
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontSize: 12,
                 color: "var(--accent)",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
               }}
             >
-              Shop by category
+              01 / PRODUCT SYSTEM
             </p>
             <h2
               style={{
                 margin: 0,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-sans)",
                 fontWeight: 800,
                 fontSize: "clamp(22px, 3vw, 28px)",
                 color: "var(--text)",
               }}
             >
-              เลือกได้ตามที่คุณต้องการ
+              เลือกชิ้นส่วนที่ใช่
             </h2>
           </div>
 
           <p
             style={{
               margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 12.5,
               color: "var(--text-dim)",
             }}

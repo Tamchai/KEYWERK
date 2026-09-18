@@ -26,6 +26,7 @@ import RazerBlackWidowV4XPng from "../assets/Razer_BlackWidow_V4_X.png";
 import SteelSeriesApexProPng from "../assets/SteelSeries_Apex_Pro_TKL_Gen_3.png";
 import SwitchKeycapPullerPng from "../assets/Switch_&_Keycap_Puller.png";
 import Wooting60HEPng from "../assets/Wooting_60HE.png";
+import { resolveSeaweedImageUrl } from "./imageUrl";
 
 const SEAFILE_BASE_URL = import.meta.env.VITE_IMAGES_BASE_URL ?? "http://localhost:8888";
 
@@ -91,12 +92,7 @@ export function resolveAssetForName(name: string): string | undefined {
 }
 
 export function resolveImageUrl(imageUrl?: string): string | undefined {
-  if (!imageUrl) return undefined;
-  if (/^https?:\/\//.test(imageUrl)) return imageUrl;
-  // SeaweedFS filer URL: /buckets/{bucket}/{file}
-  // DB stores /products/uuid.ext, need to prepend /buckets
-  const normalized = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
-  return `${SEAFILE_BASE_URL}/buckets${normalized}`;
+  return resolveSeaweedImageUrl(imageUrl, SEAFILE_BASE_URL);
 }
 
 export function resolveProductImage(

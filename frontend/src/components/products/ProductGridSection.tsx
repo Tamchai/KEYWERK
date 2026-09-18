@@ -1,20 +1,11 @@
 import { ProductCard } from "./ProductCard";
-
-interface Product {
-  id?: string;
-  image: string;
-  category: string;
-  brand?: string;
-  name: string;
-  price: string;
-  href: string;
-}
+import type { DisplayProduct } from "../../api/types";
 
 interface ProductGridSectionProps {
   id?: string;
   title: string;
   subtitle?: string;
-  products: Product[];
+  products: DisplayProduct[];
 }
 
 export const ProductGridSection = ({ id, title, subtitle, products }: ProductGridSectionProps) => (
@@ -36,7 +27,7 @@ export const ProductGridSection = ({ id, title, subtitle, products }: ProductGri
         <h2
           style={{
             margin: subtitle ? "0 0 6px" : 0,
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "var(--font-sans)",
             fontWeight: 800,
             fontSize: "clamp(22px, 3vw, 28px)",
             color: "var(--text)",
@@ -48,7 +39,7 @@ export const ProductGridSection = ({ id, title, subtitle, products }: ProductGri
           <p
             style={{
               margin: 0,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 13,
               color: "var(--text-dim)",
             }}

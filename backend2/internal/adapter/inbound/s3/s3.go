@@ -3,6 +3,7 @@ package s3
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -12,7 +13,9 @@ import (
 
 func NewS3Client(endpoint, accessKey, secretKey, region string) (*s3.Client, error) {
 	// 1. โหลด Config พื้นฐาน (ใส่ Region กับ Credentials)
-	cfg, err := config.LoadDefaultConfig(context.TODO(),
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cfg, err := config.LoadDefaultConfig(ctx,
 		config.WithRegion(region),
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")),
 	)
@@ -27,4 +30,17 @@ func NewS3Client(endpoint, accessKey, secretKey, region string) (*s3.Client, err
 	})
 
 	return client, nil
+}
+
+func EnsureBucket(client *s3.Client, bucket string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if _, err := client.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(bucket)}); err == nil {
+		return nil
+	}
+	if _, err := client.CreateBucket(ctx, &s3.CreateBucketInput{Bucket: aws.String(bucket)}); err != nil {
+		return fmt.Errorf("ensure bucket %q: %w", bucket, err)
+	}
+	return nil
 }

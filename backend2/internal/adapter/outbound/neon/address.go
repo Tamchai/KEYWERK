@@ -19,6 +19,18 @@ func NewNeonAddressRepository(db *sqlx.DB) port.AddressRepository {
 }
 
 func (r *neonAddressRepository) Save(addr dto.Address) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if addr.IsDefault {
+		if _, err = tx.Exec(`UPDATE addresses SET is_default = false WHERE user_id = $1`, addr.UserID); err != nil {
+			return err
+		}
+	}
+
 	query := `
 	INSERT INTO addresses 
 		(address_id, 
@@ -33,10 +45,11 @@ func (r *neonAddressRepository) Save(addr dto.Address) error {
 		postal_code, 
 		is_default, 
 		created_at) 
-	VALUES 
-		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+	VALUES
+		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+		 ($11 OR NOT EXISTS (SELECT 1 FROM addresses WHERE user_id = $2)), $12)`
 
-	result, err := r.db.Exec(query,
+	result, err := tx.Exec(query,
 		addr.ID,
 		addr.UserID,
 		addr.Title,
@@ -64,7 +77,7 @@ func (r *neonAddressRepository) Save(addr dto.Address) error {
 		return errors.New("cannot insert address")
 	}
 
-	return nil
+	return tx.Commit()
 }
 
 func (r *neonAddressRepository) FindByUserID(userID string) ([]dto.Address, error) {
@@ -184,6 +197,18 @@ func (r *neonAddressRepository) FindByID(id string) (*dto.Address, error) {
 }
 
 func (r *neonAddressRepository) Update(addr dto.Address) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if addr.IsDefault {
+		if _, err = tx.Exec(`UPDATE addresses SET is_default = false WHERE user_id = $1`, addr.UserID); err != nil {
+			return err
+		}
+	}
+
 	query := `
 	UPDATE addresses
 	SET 
@@ -199,7 +224,7 @@ func (r *neonAddressRepository) Update(addr dto.Address) error {
 	WHERE address_id = $10 AND user_id = $11
 	`
 
-	result, err := r.db.Exec(
+	result, err := tx.Exec(
 		query,
 		addr.Title,
 		addr.ReceiverName,
@@ -226,12 +251,17 @@ func (r *neonAddressRepository) Update(addr dto.Address) error {
 		return fmt.Errorf("address %s not found or no change", addr.ID)
 	}
 
-	return nil
+	return tx.Commit()
 }
 
-func (r *neonAddressRepository) Delete(id string) error {
-	query := `DELETE FROM addresses WHERE address_id = $1`
-	result, err := r.db.Exec(query, id)
+func (r *neonAddressRepository) Delete(address dto.Address) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`DELETE FROM addresses WHERE address_id = $1 AND user_id = $2`, address.ID, address.UserID)
 	if err != nil {
 		return err
 	}
@@ -242,14 +272,23 @@ func (r *neonAddressRepository) Delete(id string) error {
 	}
 
 	if affected <= 0 {
-		return fmt.Errorf("address %s not found", id)
+		return fmt.Errorf("address %s not found", address.ID)
 	}
 
-	return nil
-}
+	if address.IsDefault {
+		_, err = tx.Exec(`
+			UPDATE addresses
+			SET is_default = true
+			WHERE address_id = (
+				SELECT address_id FROM addresses
+				WHERE user_id = $1
+				ORDER BY created_at DESC
+				LIMIT 1
+			)`, address.UserID)
+		if err != nil {
+			return err
+		}
+	}
 
-func (r *neonAddressRepository) ClearDefault(userID string) error {
-	query := `UPDATE addresses SET is_default = false WHERE user_id = $1`
-	_, err := r.db.Exec(query, userID)
-	return err
+	return tx.Commit()
 }

@@ -14,15 +14,15 @@ type Product struct {
 }
 
 type ReqProduct struct {
-	CategoryID  string `json:"category_id" validate:"required"`
-	BrandID     string `json:"brand_id" validate:"required"`
+	CategoryID  string `json:"category_id" validate:"required,uuid"`
+	BrandID     string `json:"brand_id" validate:"required,uuid"`
 	Name        string `json:"product_name" validate:"required"`
 	Description string `json:"description"`
 }
 
 type ReqUpdateProduct struct {
-	CategoryID  string `json:"category_id"`
-	BrandID     string `json:"brand_id"`
+	CategoryID  string `json:"category_id" validate:"omitempty,uuid"`
+	BrandID     string `json:"brand_id" validate:"omitempty,uuid"`
 	Name        string `json:"product_name"`
 	Description string `json:"description"`
 }
