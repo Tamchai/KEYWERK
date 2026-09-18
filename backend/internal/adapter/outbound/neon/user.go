@@ -1,0 +1,145 @@
+package neon
+
+import (
+	"database/sql"
+	"errors"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/keywerk/internal/core/domain/dto"
+	port "github.com/keywerk/internal/core/port/repository"
+)
+
+type neonUserRepository struct {
+	db *sqlx.DB
+}
+
+func NewNeonUserRepository(db *sqlx.DB) port.UserRepository {
+	return &neonUserRepository{db: db}
+}
+
+func (r *neonUserRepository) Save(user dto.User) error {
+	query := `
+	INSERT INTO users (user_id, image, name, email, password, role, created_at, updated_at) 
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+
+	result, err := r.db.Exec(
+		query,
+		user.ID,
+		user.Image,
+		user.Name,
+		user.Email,
+		user.Password,
+		user.Role,
+		user.CreatedAt,
+		user.UpdatedAt)
+
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if affected <= 0 {
+		return errors.New("can't insert user information")
+	}
+
+	return nil
+}
+
+func (r *neonUserRepository) FindEmail(email string) (*dto.User, bool, error) {
+	var user dto.User
+	query := `
+	SELECT user_id, image, name, email, password, role, created_at, updated_at 
+	FROM users 
+	WHERE email = $1`
+
+	result := r.db.QueryRow(query, email)
+
+	var image sql.NullString
+	var name sql.NullString
+	err := result.Scan(
+		&user.ID,
+		&image,
+		&name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+
+	if image.Valid {
+		user.Image = image.String
+	}
+	if name.Valid {
+		user.Name = name.String
+	}
+
+	return &user, true, nil
+}
+
+func (r *neonUserRepository) FindByID(id string) (*dto.User, bool, error) {
+	var user dto.User
+	query := `
+	SELECT user_id, image, name, email, password, role, created_at, updated_at 
+	FROM users 
+	WHERE user_id = $1`
+
+	result := r.db.QueryRow(query, id)
+
+	var image sql.NullString
+	var name sql.NullString
+	err := result.Scan(
+		&user.ID,
+		&image,
+		&name,
+		&user.Email,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+
+	if image.Valid {
+		user.Image = image.String
+	}
+	if name.Valid {
+		user.Name = name.String
+	}
+
+	return &user, true, nil
+}
+
+func (r *neonUserRepository) UpdateProfile(id string, name *string, image *string) error {
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET name = COALESCE($1, name), image = COALESCE($2, image), updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = $3`, name, image, id)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
