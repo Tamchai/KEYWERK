@@ -18,12 +18,31 @@ func NewNeonOrderRepository(db *sqlx.DB) port.OrderRepository {
 	return &neonOrderRepository{db: db}
 }
 
-func (r *neonOrderRepository) Create(order dto.Order, items []dto.OrderItem) error {
+func (r *neonOrderRepository) Create(order dto.Order, items []dto.OrderItem, cartID string) error {
 	tx, err := r.db.Beginx()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+
+	for _, item := range items {
+		result, err := tx.Exec(`
+			UPDATE productvariants
+			SET stock = stock - $1,
+				sold_count = COALESCE(sold_count, 0) + $1
+			WHERE variant_id = $2 AND stock >= $1`, item.Quantity, item.VariantID)
+		if err != nil {
+			return err
+		}
+
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected != 1 {
+			return fmt.Errorf("insufficient stock for variant %s", item.VariantID)
+		}
+	}
 
 	orderQuery := `
 	INSERT INTO orders (
@@ -62,6 +81,12 @@ func (r *neonOrderRepository) Create(order dto.Order, items []dto.OrderItem) err
 	for _, item := range items {
 		_, err = tx.Exec(itemQuery, item.ID, item.OrderID, item.VariantID, item.UnitPrice, item.Quantity)
 		if err != nil {
+			return err
+		}
+	}
+
+	if cartID != "" {
+		if _, err = tx.Exec(`DELETE FROM cartitems WHERE cart_id = $1`, cartID); err != nil {
 			return err
 		}
 	}
@@ -299,9 +324,30 @@ func (r *neonOrderRepository) FindAll() ([]dto.ResOrder, error) {
 	return orders, nil
 }
 
-func (r *neonOrderRepository) UpdateStatus(orderID string, status dto.OrderStatus) error {
-	query := `UPDATE orders SET status = $1, updated_at = $2 WHERE order_id = $3`
-	result, err := r.db.Exec(query, status, time.Now(), orderID)
+func (r *neonOrderRepository) UpdateStatus(orderID string, fromStatus, toStatus dto.OrderStatus) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if toStatus == dto.OrderStatusCancelled {
+		var paymentID string
+		err = tx.QueryRow(`
+			SELECT payment_id::text FROM payments
+			WHERE order_id = $1 AND status = 'pending' AND provider_session_id IS NOT NULL
+			FOR UPDATE`, orderID).Scan(&paymentID)
+		if err == nil {
+			return port.ErrActiveStripeCheckout
+		}
+		if err != sql.ErrNoRows {
+			return err
+		}
+	}
+
+	result, err := tx.Exec(
+		`UPDATE orders SET status = $1, updated_at = $2 WHERE order_id = $3 AND status = $4`,
+		toStatus, time.Now(), orderID, fromStatus,
+	)
 	if err != nil {
 		return err
 	}
@@ -311,11 +357,23 @@ func (r *neonOrderRepository) UpdateStatus(orderID string, status dto.OrderStatu
 		return err
 	}
 
-	if affected <= 0 {
-		return fmt.Errorf("order %s not found", orderID)
+	if affected != 1 {
+		return fmt.Errorf("order %s status changed concurrently", orderID)
 	}
 
-	return nil
+	if toStatus == dto.OrderStatusCancelled {
+		_, err = tx.Exec(`
+			UPDATE productvariants AS pv
+			SET stock = pv.stock + oi.quantity,
+				sold_count = GREATEST(0, COALESCE(pv.sold_count, 0) - oi.quantity)
+			FROM ordersitems AS oi
+			WHERE oi.order_id = $1 AND oi.variant_id = pv.variant_id`, orderID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *neonOrderRepository) UpdateAddress(orderID string, req dto.ReqUpdateOrderAddress) error {

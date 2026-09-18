@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useProductDetailQuery } from "../hooks/queries/useCatalogQueries";
 import { Carousel } from "../components/products/Carousel";
 import { resolveProductImage, resolveImageUrl } from "../utils/image";
@@ -7,24 +7,36 @@ import Navbar from "../components/layout/Navbar";
 import Footer from "../components/layout/Footer";
 import { useCartStore } from "../stores/cartStore";
 import { useToast } from "../hooks/useToast";
+import { useAuthStore } from "../stores/authStore";
 
 export const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { product, variants, brands, categories, isLoading, isError, error } =
     useProductDetailQuery(productId);
-  const { addToCart } = useCartStore();
+  const { addToCart, loading: cartLoading } = useCartStore();
   const { showToast } = useToast();
+  const navigate = useNavigate();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
   const brandName = brands.find((b) => b.id === product?.brand_id)?.name;
   const categoryName = categories.find((c) => c.id === product?.category_id)?.name;
 
   const handleAddToCart = async (variantId: string) => {
+    if (!isLoggedIn) {
+      navigate("/login", { state: { from: `/product/${productId}` } });
+      return;
+    }
     try {
       await addToCart(variantId, 1);
       showToast("เพิ่มลงตะกร้าแล้ว", "success");
     } catch (err) {
       showToast(err instanceof Error ? err.message : "เพิ่มลงตะกร้าไม่สำเร็จ", "error");
     }
+  };
+
+  const handleBuyNow = (variantId: string) => {
+    const target = `/checkout?variant=${encodeURIComponent(variantId)}&quantity=1`;
+    navigate(isLoggedIn ? target : "/login", isLoggedIn ? undefined : { state: { from: target } });
   };
 
   const carouselImages = variants
@@ -61,20 +73,20 @@ export const ProductDetail = () => {
       >
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           {isLoading && (
-            <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "var(--text-dim)" }}>
+            <p style={{ fontFamily: "var(--font-sans)", color: "var(--text-dim)" }}>
               กำลังโหลด...
             </p>
           )}
 
           {isError && (
             <div>
-              <p style={{ fontFamily: "'JetBrains Mono', monospace", color: "#e85d5d" }}>
+              <p style={{ fontFamily: "var(--font-sans)", color: "#e85d5d" }}>
                 {error || "ไม่พบสินค้า"}
               </p>
               <Link
                 to="/"
                 style={{
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "var(--font-sans)",
                   fontSize: 13,
                   color: "var(--accent)",
                   textDecoration: "none",
@@ -89,7 +101,7 @@ export const ProductDetail = () => {
             <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
               <nav
                 style={{
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "var(--font-sans)",
                   fontSize: 12.5,
                   color: "var(--text-dim)",
                   display: "flex",
@@ -98,7 +110,7 @@ export const ProductDetail = () => {
                 }}
               >
                 <Link to="/" style={{ color: "var(--text-dim)", textDecoration: "none" }}>
-                  Home
+                  หน้าแรก
                 </Link>
                 <span>/</span>
                 {categoryName && (
@@ -120,7 +132,7 @@ export const ProductDetail = () => {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "var(--font-sans)",
                         fontWeight: 700,
                         fontSize: 11.5,
                         letterSpacing: "0.08em",
@@ -135,7 +147,7 @@ export const ProductDetail = () => {
                   <h1
                     style={{
                       margin: 0,
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "var(--font-sans)",
                       fontWeight: 800,
                       fontSize: "clamp(22px, 3vw, 30px)",
                       color: "var(--text)",
@@ -149,7 +161,7 @@ export const ProductDetail = () => {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "var(--font-sans)",
                         fontSize: 13.5,
                         color: "var(--text-dim)",
                         lineHeight: 1.7,
@@ -163,7 +175,7 @@ export const ProductDetail = () => {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "var(--font-sans)",
                         fontWeight: 800,
                         fontSize: 22,
                         color: "var(--accent)",
@@ -189,7 +201,7 @@ export const ProductDetail = () => {
                     <p
                       style={{
                         margin: 0,
-                        fontFamily: "'JetBrains Mono', monospace",
+                        fontFamily: "var(--font-sans)",
                         fontSize: 12.5,
                         color: "var(--text-dim)",
                       }}
@@ -205,7 +217,7 @@ export const ProductDetail = () => {
                   <h2
                     style={{
                       margin: "0 0 16px",
-                      fontFamily: "'JetBrains Mono', monospace",
+                      fontFamily: "var(--font-sans)",
                       fontWeight: 800,
                       fontSize: 18,
                       color: "var(--text)",
@@ -260,7 +272,7 @@ export const ProductDetail = () => {
                           <p
                             style={{
                               margin: "0 0 4px",
-                              fontFamily: "'JetBrains Mono', monospace",
+                              fontFamily: "var(--font-sans)",
                               fontWeight: 700,
                               fontSize: 14,
                               color: "var(--text)",
@@ -274,7 +286,7 @@ export const ProductDetail = () => {
                                 <span
                                   key={key}
                                   style={{
-                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontFamily: "var(--font-sans)",
                                     fontSize: 11,
                                     color: "var(--text-dim)",
                                     background: "var(--bg)",
@@ -293,7 +305,7 @@ export const ProductDetail = () => {
                           <p
                             style={{
                               margin: "0 0 4px",
-                              fontFamily: "'JetBrains Mono', monospace",
+                              fontFamily: "var(--font-sans)",
                               fontWeight: 700,
                               fontSize: 15,
                               color: "var(--accent)",
@@ -304,7 +316,7 @@ export const ProductDetail = () => {
                           <p
                             style={{
                               margin: 0,
-                              fontFamily: "'JetBrains Mono', monospace",
+                              fontFamily: "var(--font-sans)",
                               fontSize: 12,
                               color: variant.stock > 0 ? "var(--text-dim)" : "#e85d5d",
                             }}
@@ -312,8 +324,10 @@ export const ProductDetail = () => {
                             {variant.stock > 0 ? `คงเหลือ ${variant.stock}` : "สินค้าหมด"}
                           </p>
                           {variant.stock > 0 && (
+                            <div style={{ display: "flex", gap: 8 }}>
                             <button
                               type="button"
+                              disabled={cartLoading}
                               onClick={() => handleAddToCart(variant.variant_id)}
                               style={{
                                 background: "var(--accent)",
@@ -321,10 +335,11 @@ export const ProductDetail = () => {
                                 border: "none",
                                 borderRadius: 6,
                                 padding: "8px 16px",
-                                fontFamily: "'JetBrains Mono', monospace",
+                                fontFamily: "var(--font-sans)",
                                 fontSize: 12,
                                 fontWeight: 700,
-                                cursor: "pointer",
+								cursor: cartLoading ? "not-allowed" : "pointer",
+								opacity: cartLoading ? 0.6 : 1,
                                 transition: "opacity 0.2s ease",
                               }}
                               onMouseEnter={(e) => { e.currentTarget.style.opacity = "0.85"; }}
@@ -332,6 +347,14 @@ export const ProductDetail = () => {
                             >
                               เพิ่มลงตะกร้า
                             </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBuyNow(variant.variant_id)}
+                              style={{ background: "transparent", color: "var(--accent)", border: "1px solid var(--accent)", borderRadius: 6, padding: "8px 16px", cursor: "pointer" }}
+                            >
+                              ซื้อทันที
+                            </button>
+                            </div>
                           )}
                         </div>
                       </div>

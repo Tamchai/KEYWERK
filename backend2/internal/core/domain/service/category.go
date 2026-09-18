@@ -1,6 +1,9 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
+
 	"github.com/google/uuid"
 	"github.com/keywerk/internal/core/domain/dto"
 	"github.com/keywerk/internal/core/domain/errs"
@@ -24,10 +27,16 @@ func NewCategoryService(categoryRepo port.CategoryRepository) CategoryService {
 }
 
 func (s *categoryService) FindCategoryByID(categoryID string) (*dto.ResCategory, error) {
+	if err := validateUUID(categoryID, "category id"); err != nil {
+		return nil, err
+	}
 
 	category, err := s.categoryRepo.Get(categoryID)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errs.NotFound("category not found", err)
+		}
 		return nil, errs.Internal("not found category", err)
 	}
 
@@ -60,6 +69,9 @@ func (s *categoryService) ListCategories() (*[]dto.ResCategory, error) {
 }
 
 func (s *categoryService) UpdateCategory(categoryID string, reqCategory dto.ReqCategory) error {
+	if err := validateUUID(categoryID, "category id"); err != nil {
+		return err
+	}
 
 	category := dto.Category{
 		Name: reqCategory.Name,
@@ -68,6 +80,9 @@ func (s *categoryService) UpdateCategory(categoryID string, reqCategory dto.ReqC
 	err := s.categoryRepo.Update(categoryID, category)
 
 	if err != nil {
+		if isUniqueViolation(err) {
+			return errs.Conflict("category name already exists", err)
+		}
 		return errs.Internal("can't update category", err)
 	}
 
@@ -75,6 +90,9 @@ func (s *categoryService) UpdateCategory(categoryID string, reqCategory dto.ReqC
 }
 
 func (s *categoryService) DeleteCategory(categoryID string) error {
+	if err := validateUUID(categoryID, "category id"); err != nil {
+		return err
+	}
 
 	err := s.categoryRepo.Delete(categoryID)
 	if err != nil {
@@ -93,6 +111,9 @@ func (s *categoryService) SaveCategory(reqCategory dto.ReqCategory) error {
 
 	err := s.categoryRepo.Save(category)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return errs.Conflict("category name already exists", err)
+		}
 		return errs.Internal("can't insert category", err)
 	}
 

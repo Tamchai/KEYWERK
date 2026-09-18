@@ -13,19 +13,19 @@ type ProductVariant struct {
 }
 
 type ReqProductVariant struct {
-	ProductID  string         `json:"product_id" validate:"required"`
-	ImageID    string         `json:"image_id"`
+	ProductID  string         `json:"product_id" validate:"required,uuid"`
+	ImageID    string         `json:"image_id" validate:"omitempty,uuid"`
 	Name       string         `json:"variant_name" validate:"required"`
-	Stock      int            `json:"stock"`
-	Price      float64        `json:"price" validate:"required"`
+	Stock      int            `json:"stock" validate:"gte=0"`
+	Price      float64        `json:"price" validate:"required,gt=0"`
 	Attributes map[string]any `json:"attributes"`
 }
 
 type ReqUpdateProductVariant struct {
-	ImageID    string         `json:"image_id"`
+	ImageID    string         `json:"image_id" validate:"omitempty,uuid"`
 	Name       string         `json:"variant_name"`
-	Stock      *int           `json:"stock"`
-	Price      *float64       `json:"price"`
+	Stock      *int           `json:"stock" validate:"omitempty,gte=0"`
+	Price      *float64       `json:"price" validate:"omitempty,gt=0"`
 	Attributes map[string]any `json:"attributes"`
 }
 

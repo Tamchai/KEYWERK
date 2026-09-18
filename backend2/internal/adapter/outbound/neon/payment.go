@@ -41,12 +41,54 @@ func (r *neonPaymentRepository) Create(p dto.Payment) error {
 	return nil
 }
 
+func (r *neonPaymentRepository) Retry(paymentID string, amount float64) (bool, error) {
+	result, err := r.db.Exec(`
+		UPDATE payments
+		SET payment_method = 'stripe', amount = $1, status = 'pending', paid_at = NULL,
+			provider_session_id = NULL, provider_payment_intent_id = NULL, checkout_url = NULL,
+			checkout_attempt = checkout_attempt + 1, created_at = CURRENT_TIMESTAMP
+		WHERE payment_id = $2 AND status = 'failed'`, amount, paymentID)
+	if err != nil {
+		return false, err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected == 1, nil
+}
+
+func (r *neonPaymentRepository) AttachStripeSession(paymentID string, sessionID string, checkoutURL string) error {
+	result, err := r.db.Exec(`
+		UPDATE payments
+		SET provider_session_id = $1, checkout_url = $2
+		WHERE payment_id = $3 AND status = 'pending'`, sessionID, checkoutURL, paymentID)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected != 1 {
+		return fmt.Errorf("payment %s is no longer pending", paymentID)
+	}
+	return nil
+}
+
+func (r *neonPaymentRepository) MarkCheckoutCreationFailed(paymentID string) error {
+	_, err := r.db.Exec(`UPDATE payments SET status = 'failed' WHERE payment_id = $1 AND status = 'pending'`, paymentID)
+	return err
+}
+
 func (r *neonPaymentRepository) FindByOrderID(orderID string) (*dto.Payment, error) {
 	query := `
-	SELECT payment_id::text, order_id::text, amount::text, status, COALESCE(payment_method, ''), paid_at
+	SELECT payment_id::text, order_id::text, amount::text, status, COALESCE(payment_method, ''), paid_at,
+		COALESCE(provider_session_id, ''), COALESCE(provider_payment_intent_id, ''), COALESCE(checkout_url, ''), checkout_attempt
 	FROM payments
 	WHERE order_id = $1
-	ORDER BY paid_at DESC NULLS LAST
+	ORDER BY created_at DESC
 	LIMIT 1
 	`
 
@@ -61,6 +103,10 @@ func (r *neonPaymentRepository) FindByOrderID(orderID string) (*dto.Payment, err
 		&p.Status,
 		&p.PaymentMethod,
 		&paidAt,
+		&p.ProviderSessionID,
+		&p.ProviderPaymentIntentID,
+		&p.CheckoutURL,
+		&p.CheckoutAttempt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -82,7 +128,8 @@ func (r *neonPaymentRepository) FindByOrderID(orderID string) (*dto.Payment, err
 
 func (r *neonPaymentRepository) FindByID(paymentID string) (*dto.Payment, error) {
 	query := `
-	SELECT payment_id::text, order_id::text, amount::text, status, COALESCE(payment_method, ''), paid_at
+	SELECT payment_id::text, order_id::text, amount::text, status, COALESCE(payment_method, ''), paid_at,
+		COALESCE(provider_session_id, ''), COALESCE(provider_payment_intent_id, ''), COALESCE(checkout_url, ''), checkout_attempt
 	FROM payments
 	WHERE payment_id = $1
 	`
@@ -98,6 +145,10 @@ func (r *neonPaymentRepository) FindByID(paymentID string) (*dto.Payment, error)
 		&p.Status,
 		&p.PaymentMethod,
 		&paidAt,
+		&p.ProviderSessionID,
+		&p.ProviderPaymentIntentID,
+		&p.CheckoutURL,
+		&p.CheckoutAttempt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -119,9 +170,10 @@ func (r *neonPaymentRepository) FindByID(paymentID string) (*dto.Payment, error)
 
 func (r *neonPaymentRepository) FindAll() ([]dto.Payment, error) {
 	query := `
-	SELECT payment_id::text, order_id::text, amount::text, status, COALESCE(payment_method, ''), paid_at
+	SELECT payment_id::text, order_id::text, amount::text, status, COALESCE(payment_method, ''), paid_at,
+		COALESCE(provider_session_id, ''), COALESCE(provider_payment_intent_id, ''), COALESCE(checkout_url, ''), checkout_attempt
 	FROM payments
-	ORDER BY paid_at DESC NULLS LAST
+	ORDER BY created_at DESC
 	`
 
 	rows, err := r.db.Query(query)
@@ -143,6 +195,10 @@ func (r *neonPaymentRepository) FindAll() ([]dto.Payment, error) {
 			&p.Status,
 			&p.PaymentMethod,
 			&paidAt,
+			&p.ProviderSessionID,
+			&p.ProviderPaymentIntentID,
+			&p.CheckoutURL,
+			&p.CheckoutAttempt,
 		)
 		if err != nil {
 			return nil, err
@@ -162,20 +218,121 @@ func (r *neonPaymentRepository) FindAll() ([]dto.Payment, error) {
 	return payments, nil
 }
 
-func (r *neonPaymentRepository) UpdateStatus(paymentID string, status dto.PaymentStatus) error {
-	var query string
-	var err error
-	var result sql.Result
+func (r *neonPaymentRepository) ProcessStripeEvent(eventID, eventType, paymentID, orderID, sessionID, paymentIntentID string, status dto.PaymentStatus) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
 
-	now := time.Now()
-	if status == dto.PaymentStatusPaid {
-		query = `UPDATE payments SET status = $1, paid_at = $2 WHERE payment_id = $3`
-		result, err = r.db.Exec(query, status, now, paymentID)
-	} else {
-		query = `UPDATE payments SET status = $1 WHERE payment_id = $2`
-		result, err = r.db.Exec(query, status, paymentID)
+	result, err := tx.Exec(`
+		INSERT INTO stripe_webhook_events (event_id, event_type)
+		VALUES ($1, $2)
+		ON CONFLICT (event_id) DO NOTHING`, eventID, eventType)
+	if err != nil {
+		return err
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return tx.Commit()
 	}
 
+	var currentStatus dto.PaymentStatus
+	var storedOrderID string
+	var storedSessionID sql.NullString
+	if err := tx.QueryRow(`
+		SELECT status, order_id::text, provider_session_id
+		FROM payments WHERE payment_id = $1 FOR UPDATE`, paymentID).Scan(&currentStatus, &storedOrderID, &storedSessionID); err != nil {
+		return err
+	}
+	if storedOrderID != orderID {
+		return errors.New("Stripe order metadata does not match payment")
+	}
+	if storedSessionID.Valid && storedSessionID.String != sessionID {
+		// A delayed event from an older Checkout attempt is valid but stale.
+		return tx.Commit()
+	}
+	if currentStatus == dto.PaymentStatusPaid {
+		return tx.Commit()
+	}
+
+	if status == dto.PaymentStatusPending {
+		_, err = tx.Exec(`
+			UPDATE payments
+			SET provider_session_id = COALESCE(provider_session_id, $1)
+			WHERE payment_id = $2`, sessionID, paymentID)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err = tx.Exec(`
+			UPDATE payments
+			SET status = $1::payment_status,
+				provider_session_id = COALESCE(provider_session_id, $2),
+				provider_payment_intent_id = NULLIF($3, ''),
+				paid_at = CASE WHEN $1::text = 'paid' THEN COALESCE(paid_at, CURRENT_TIMESTAMP) ELSE NULL END
+			WHERE payment_id = $4`, status, sessionID, paymentIntentID, paymentID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if status == dto.PaymentStatusPaid {
+		result, err = tx.Exec(`
+			UPDATE orders SET status = 'processing', updated_at = CURRENT_TIMESTAMP
+			WHERE order_id = $1 AND status = 'pending'`, orderID)
+		if err != nil {
+			return err
+		}
+		affected, err = result.RowsAffected()
+		if err != nil {
+			return err
+		}
+		if affected != 1 {
+			return errors.New("paid Stripe order is no longer pending")
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (r *neonPaymentRepository) VerifyAndUpdateOrder(paymentID string, orderID string, status dto.PaymentStatus) error {
+	tx, err := r.db.Beginx()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var currentPaymentStatus dto.PaymentStatus
+	if err := tx.QueryRow(`SELECT status FROM payments WHERE payment_id = $1 FOR UPDATE`, paymentID).Scan(&currentPaymentStatus); err != nil {
+		return err
+	}
+	if currentPaymentStatus == dto.PaymentStatusPaid && status != dto.PaymentStatusPaid {
+		return errors.New("paid payment cannot be changed")
+	}
+	if currentPaymentStatus == status {
+		return tx.Commit()
+	}
+
+	var orderStatus dto.OrderStatus
+	if err := tx.QueryRow(`SELECT status FROM orders WHERE order_id = $1 FOR UPDATE`, orderID).Scan(&orderStatus); err != nil {
+		return err
+	}
+	if status == dto.PaymentStatusPaid && orderStatus == dto.OrderStatusCancelled {
+		return errors.New("cannot approve payment for cancelled order")
+	}
+
+	result, err := tx.Exec(`
+		UPDATE payments
+		SET status = $1,
+			paid_at = CASE
+				WHEN $2 THEN COALESCE(paid_at, $3)
+				ELSE NULL
+			END
+		WHERE payment_id = $4`, status, status == dto.PaymentStatusPaid, time.Now(), paymentID)
 	if err != nil {
 		return err
 	}
@@ -184,10 +341,18 @@ func (r *neonPaymentRepository) UpdateStatus(paymentID string, status dto.Paymen
 	if err != nil {
 		return err
 	}
-
-	if affected <= 0 {
+	if affected != 1 {
 		return fmt.Errorf("payment %s not found", paymentID)
 	}
 
-	return nil
+	if status == dto.PaymentStatusPaid {
+		if _, err = tx.Exec(`
+			UPDATE orders
+			SET status = 'processing', updated_at = $1
+			WHERE order_id = $2 AND status = 'pending'`, time.Now(), orderID); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
 }

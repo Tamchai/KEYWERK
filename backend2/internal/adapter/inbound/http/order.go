@@ -43,7 +43,7 @@ func (h *orderHandler) CreateOrder(c *fiber.Ctx) error {
 
 	res, err := h.orderService.CreateOrder(userID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
@@ -60,7 +60,7 @@ func (h *orderHandler) GetMyOrders(c *fiber.Ctx) error {
 
 	orders, err := h.orderService.GetUserOrders(userID)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{
@@ -80,7 +80,7 @@ func (h *orderHandler) GetOrderDetail(c *fiber.Ctx) error {
 
 	order, err := h.orderService.GetOrderDetail(orderID, userID, isAdmin)
 	if err != nil {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{
@@ -108,7 +108,7 @@ func (h *orderHandler) UpdateOrderAddress(c *fiber.Ctx) error {
 
 	err = h.orderService.UpdateOrderAddress(orderID, userID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "order shipping address updated successfully"})
@@ -117,7 +117,7 @@ func (h *orderHandler) UpdateOrderAddress(c *fiber.Ctx) error {
 func (h *orderHandler) AdminGetAllOrders(c *fiber.Ctx) error {
 	orders, err := h.orderService.GetAllOrdersForAdmin()
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{
@@ -141,7 +141,7 @@ func (h *orderHandler) AdminUpdateOrderStatus(c *fiber.Ctx) error {
 
 	err = h.orderService.UpdateOrderStatus(orderID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "order status updated successfully"})
@@ -162,7 +162,7 @@ func (h *orderHandler) AdminUpdateTracking(c *fiber.Ctx) error {
 
 	err = h.orderService.UpdateTrackingNumber(orderID, req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": err.Error()})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "tracking number updated successfully"})

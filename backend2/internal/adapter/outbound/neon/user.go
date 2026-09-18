@@ -124,3 +124,22 @@ func (r *neonUserRepository) FindByID(id string) (*dto.User, bool, error) {
 
 	return &user, true, nil
 }
+
+func (r *neonUserRepository) UpdateProfile(id string, name *string, image *string) error {
+	result, err := r.db.Exec(`
+		UPDATE users
+		SET name = COALESCE($1, name), image = COALESCE($2, image), updated_at = CURRENT_TIMESTAMP
+		WHERE user_id = $3`, name, image, id)
+	if err != nil {
+		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,10 +28,10 @@ func NewAddressService(addressRepo port.AddressRepository) AddressService {
 }
 
 func (s *addressService) CreateAddress(reqAddr dto.ReqAddress, userID string) error {
-	if reqAddr.IsDefault {
-		_ = s.addressRepo.ClearDefault(userID)
+	reqAddr = normalizeAddress(reqAddr)
+	if err := validateAddress(reqAddr); err != nil {
+		return err
 	}
-
 	addrToSave := dto.Address{
 		ID:           uuid.NewString(),
 		UserID:       userID,
@@ -82,13 +83,16 @@ func (s *addressService) GetAddressesByUserID(userID string) ([]dto.ResAddress, 
 }
 
 func (s *addressService) GetAddressByID(addrID string, userID string) (*dto.ResAddress, error) {
+	if err := validateUUID(addrID, "address id"); err != nil {
+		return nil, err
+	}
 	addr, err := s.addressRepo.FindByID(addrID)
 	if err != nil {
 		return nil, errs.NotFound("address not found", err)
 	}
 
 	if addr.UserID != userID {
-		return nil, errs.Unauthorized("unauthorized address access", nil)
+		return nil, errs.Forbidden("address access denied", nil)
 	}
 
 	res := &dto.ResAddress{
@@ -110,17 +114,20 @@ func (s *addressService) GetAddressByID(addrID string, userID string) (*dto.ResA
 }
 
 func (s *addressService) UpdateAddress(reqAddr dto.ReqAddress, userID string, addrID string) error {
+	if err := validateUUID(addrID, "address id"); err != nil {
+		return err
+	}
+	reqAddr = normalizeAddress(reqAddr)
+	if err := validateAddress(reqAddr); err != nil {
+		return err
+	}
 	existing, err := s.addressRepo.FindByID(addrID)
 	if err != nil {
 		return errs.NotFound("address not found", err)
 	}
 
 	if existing.UserID != userID {
-		return errs.Unauthorized("unauthorized address modification", nil)
-	}
-
-	if reqAddr.IsDefault && !existing.IsDefault {
-		_ = s.addressRepo.ClearDefault(userID)
+		return errs.Forbidden("address modification denied", nil)
 	}
 
 	addrToUpdate := dto.Address{
@@ -145,17 +152,39 @@ func (s *addressService) UpdateAddress(reqAddr dto.ReqAddress, userID string, ad
 	return nil
 }
 
+func normalizeAddress(req dto.ReqAddress) dto.ReqAddress {
+	req.Title = strings.TrimSpace(req.Title)
+	req.ReceiverName = strings.TrimSpace(req.ReceiverName)
+	req.PhoneNumber = strings.TrimSpace(req.PhoneNumber)
+	req.AddressLine1 = strings.TrimSpace(req.AddressLine1)
+	req.AddressLine2 = strings.TrimSpace(req.AddressLine2)
+	req.District = strings.TrimSpace(req.District)
+	req.Province = strings.TrimSpace(req.Province)
+	req.PostalCode = strings.TrimSpace(req.PostalCode)
+	return req
+}
+
+func validateAddress(req dto.ReqAddress) error {
+	if req.ReceiverName == "" || req.PhoneNumber == "" || req.AddressLine1 == "" || req.District == "" || req.Province == "" || req.PostalCode == "" {
+		return errs.BadRequest("shipping address is incomplete", nil)
+	}
+	return nil
+}
+
 func (s *addressService) DeleteAddress(addrID string, userID string) error {
+	if err := validateUUID(addrID, "address id"); err != nil {
+		return err
+	}
 	existing, err := s.addressRepo.FindByID(addrID)
 	if err != nil {
 		return errs.NotFound("address not found", err)
 	}
 
 	if existing.UserID != userID {
-		return errs.Unauthorized("unauthorized address deletion", nil)
+		return errs.Forbidden("address deletion denied", nil)
 	}
 
-	err = s.addressRepo.Delete(addrID)
+	err = s.addressRepo.Delete(*existing)
 	if err != nil {
 		msg := fmt.Sprintf("cannot delete address %s", addrID)
 		return errs.Internal(msg, err)

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -58,12 +59,15 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 	postalCode := req.PostalCode
 
 	if req.AddressID != "" {
+		if err := validateUUID(req.AddressID, "address id"); err != nil {
+			return nil, err
+		}
 		addr, err := s.addressRepo.FindByID(req.AddressID)
 		if err != nil {
 			return nil, errs.BadRequest("invalid address id", err)
 		}
 		if addr.UserID != userID {
-			return nil, errs.Unauthorized("unauthorized address", nil)
+			return nil, errs.Forbidden("address access denied", nil)
 		}
 		receiverName = addr.ReceiverName
 		phoneNumber = addr.PhoneNumber
@@ -85,10 +89,18 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 	}
 
 	var itemsToProcess []itemDetail
-	isFromCart := false
+	cartID := ""
 
 	if len(req.Items) > 0 {
+		seenVariants := make(map[string]struct{}, len(req.Items))
 		for _, item := range req.Items {
+			if err := validateUUID(item.VariantID, "variant id"); err != nil {
+				return nil, err
+			}
+			if _, exists := seenVariants[item.VariantID]; exists {
+				return nil, errs.BadRequest("duplicate product variant in order items", nil)
+			}
+			seenVariants[item.VariantID] = struct{}{}
 			itemsToProcess = append(itemsToProcess, itemDetail{
 				variantID: item.VariantID,
 				quantity:  item.Quantity,
@@ -96,7 +108,6 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 		}
 	} else {
 		// Checkout from cart
-		isFromCart = true
 		cart, err := s.cartRepo.GetOrCreateCart(userID)
 		if err != nil {
 			return nil, errs.Internal("cannot get cart", err)
@@ -110,6 +121,7 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 		if len(cartItems) == 0 {
 			return nil, errs.BadRequest("cart is empty", nil)
 		}
+		cartID = cart.ID
 
 		for _, ci := range cartItems {
 			itemsToProcess = append(itemsToProcess, itemDetail{
@@ -120,7 +132,7 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 	}
 
 	// 3. Verify stock and calculate total price
-	var totalPrice float64
+	var totalCents int64
 	var orderItems []dto.OrderItem
 	var resItems []dto.ResOrderItem
 	newOrderID := uuid.NewString()
@@ -135,8 +147,9 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 			return nil, errs.BadRequest(fmt.Sprintf("insufficient stock for variant %s. available: %d", variant.Name, variant.Stock), nil)
 		}
 
-		subtotal := variant.Price * float64(item.quantity)
-		totalPrice += subtotal
+		subtotalCents := amountToCents(variant.Price) * int64(item.quantity)
+		totalCents += subtotalCents
+		subtotal := centsToAmount(subtotalCents)
 
 		newOrderItemID := uuid.NewString()
 		orderItems = append(orderItems, dto.OrderItem{
@@ -158,22 +171,13 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 		})
 	}
 
-	// 4. Deduct stock and increment sold count
-	for _, item := range itemsToProcess {
-		err := s.productVariantRepo.UpdateStock(item.variantID, -item.quantity)
-		if err != nil {
-			return nil, errs.Internal("cannot deduct stock", err)
-		}
-		_ = s.productVariantRepo.IncrementSold(item.variantID, item.quantity)
-	}
-
-	// 5. Create Order in Database
+	// 4. Create the order, reserve stock, update sold counts, and clear the cart atomically.
 	now := time.Now()
 	order := dto.Order{
 		ID:             newOrderID,
 		UserID:         userID,
 		Status:         dto.OrderStatusPending,
-		TotalPrice:     totalPrice,
+		TotalPrice:     centsToAmount(totalCents),
 		ShippingMethod: req.ShippingMethod,
 		ReceiverName:   receiverName,
 		PhoneNumber:    phoneNumber,
@@ -186,17 +190,9 @@ func (s *orderService) CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.
 		UpdatedAt:      now,
 	}
 
-	err := s.orderRepo.Create(order, orderItems)
+	err := s.orderRepo.Create(order, orderItems, cartID)
 	if err != nil {
-		return nil, errs.Internal("cannot create order", err)
-	}
-
-	// 6. If ordered from cart, clear cart!
-	if isFromCart {
-		cart, err := s.cartRepo.GetOrCreateCart(userID)
-		if err == nil {
-			_ = s.cartRepo.ClearCart(cart.ID)
-		}
+		return nil, errs.BadRequest("cannot create order; stock may have changed", err)
 	}
 
 	res := &dto.ResOrderDetail{
@@ -232,13 +228,16 @@ func (s *orderService) GetUserOrders(userID string) ([]dto.ResOrder, error) {
 }
 
 func (s *orderService) GetOrderDetail(orderID string, userID string, isAdmin bool) (*dto.ResOrderDetail, error) {
+	if err := validateUUID(orderID, "order id"); err != nil {
+		return nil, err
+	}
 	order, err := s.orderRepo.FindByID(orderID)
 	if err != nil {
 		return nil, errs.NotFound("order not found", err)
 	}
 
 	if !isAdmin && order.UserID != userID {
-		return nil, errs.Unauthorized("unauthorized order access", nil)
+		return nil, errs.Forbidden("order access denied", nil)
 	}
 
 	items, err := s.orderRepo.FindItemsByOrderID(orderID)
@@ -256,6 +255,9 @@ func (s *orderService) GetOrderDetail(orderID string, userID string, isAdmin boo
 			Status:        payment.Status,
 			PaymentMethod: payment.PaymentMethod,
 			PaidAt:        payment.PaidAt,
+			ProviderSessionID:       payment.ProviderSessionID,
+			ProviderPaymentIntentID: payment.ProviderPaymentIntentID,
+			CheckoutURL:             payment.CheckoutURL,
 		}
 	}
 
@@ -285,13 +287,16 @@ func (s *orderService) GetOrderDetail(orderID string, userID string, isAdmin boo
 }
 
 func (s *orderService) UpdateOrderAddress(orderID string, userID string, req dto.ReqUpdateOrderAddress) error {
+	if err := validateUUID(orderID, "order id"); err != nil {
+		return err
+	}
 	order, err := s.orderRepo.FindByID(orderID)
 	if err != nil {
 		return errs.NotFound("order not found", err)
 	}
 
 	if order.UserID != userID {
-		return errs.Unauthorized("unauthorized order modification", nil)
+		return errs.Forbidden("order modification denied", nil)
 	}
 
 	if order.Status != dto.OrderStatusPending {
@@ -315,13 +320,29 @@ func (s *orderService) GetAllOrdersForAdmin() ([]dto.ResOrder, error) {
 }
 
 func (s *orderService) UpdateOrderStatus(orderID string, req dto.ReqUpdateOrderStatus) error {
-	_, err := s.orderRepo.FindByID(orderID)
+	if err := validateUUID(orderID, "order id"); err != nil {
+		return err
+	}
+	if !req.Status.IsValid() {
+		return errs.BadRequest("invalid order status", nil)
+	}
+
+	order, err := s.orderRepo.FindByID(orderID)
 	if err != nil {
 		return errs.NotFound("order not found", err)
 	}
+	if !dto.CanTransitionOrderStatus(order.Status, req.Status) {
+		return errs.BadRequest(fmt.Sprintf("cannot change order status from %s to %s", order.Status, req.Status), nil)
+	}
+	if order.Status == req.Status {
+		return nil
+	}
 
-	err = s.orderRepo.UpdateStatus(orderID, req.Status)
+	err = s.orderRepo.UpdateStatus(orderID, order.Status, req.Status)
 	if err != nil {
+		if errors.Is(err, port.ErrActiveStripeCheckout) {
+			return errs.Conflict("cannot cancel an order while Stripe Checkout is active", err)
+		}
 		return errs.Internal("cannot update order status", err)
 	}
 
@@ -329,7 +350,10 @@ func (s *orderService) UpdateOrderStatus(orderID string, req dto.ReqUpdateOrderS
 }
 
 func (s *orderService) UpdateTrackingNumber(orderID string, req dto.ReqUpdateTracking) error {
-	_, err := s.orderRepo.FindByID(orderID)
+	if err := validateUUID(orderID, "order id"); err != nil {
+		return err
+	}
+	order, err := s.orderRepo.FindByID(orderID)
 	if err != nil {
 		return errs.NotFound("order not found", err)
 	}
@@ -337,6 +361,12 @@ func (s *orderService) UpdateTrackingNumber(orderID string, req dto.ReqUpdateTra
 	status := req.Status
 	if status == "" {
 		status = dto.OrderStatusShipped
+	}
+	if !status.IsValid() {
+		return errs.BadRequest("invalid order status", nil)
+	}
+	if !dto.CanTransitionOrderStatus(order.Status, status) {
+		return errs.BadRequest(fmt.Sprintf("cannot change order status from %s to %s", order.Status, status), nil)
 	}
 
 	err = s.orderRepo.UpdateTracking(orderID, req.TrackingNumber, status)

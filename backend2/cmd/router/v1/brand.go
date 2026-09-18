@@ -23,5 +23,5 @@ func SetupBrandRoutes(router fiber.Router) {
 	// Admin protected routes
 	brand.Post("/", middleware.AuthMiddleware(), middleware.CheckAdminRole(), brandHandler.CreateBrand)
 	brand.Patch("/:brandID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), brandHandler.UpdateBrand)
-	brand.Delete("/:brandID", middleware.CheckAdminRole(), brandHandler.DeleteBrand)
+	brand.Delete("/:brandID", middleware.AuthMiddleware(), middleware.CheckAdminRole(), brandHandler.DeleteBrand)
 }

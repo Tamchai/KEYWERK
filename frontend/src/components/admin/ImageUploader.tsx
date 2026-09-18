@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { adminUploadImage } from "../../api/admin";
 import { resolveImageUrl } from "../../utils/image";
-import { fieldStyle, ghostBtn } from "./adminStyles";
+import { useToast } from "../../hooks/useToast";
+import { fieldStyle, ghostBtn } from "./adminStyleTokens";
 
 interface ImageUploaderProps {
   imageId: string;
@@ -12,21 +13,38 @@ interface ImageUploaderProps {
 export const ImageUploader = ({ imageId, imageUrl, onUploaded }: ImageUploaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [localPreview, setLocalPreview] = useState<string>();
+  const { showToast } = useToast();
 
   const handleSelect = async (file: File | undefined) => {
     if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showToast("รองรับเฉพาะไฟล์ JPEG, PNG และ WebP", "error");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast("รูปสินค้าต้องมีขนาดไม่เกิน 5 MB", "error");
+      return;
+    }
+    setLocalPreview(URL.createObjectURL(file));
     setUploading(true);
     try {
       const img = await adminUploadImage(file);
       onUploaded(img.image_id, img.image_url);
+      setLocalPreview(undefined);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "อัปโหลดไม่สำเร็จ");
+	  setLocalPreview(undefined);
+      showToast(err instanceof Error ? err.message : "อัปโหลดไม่สำเร็จ", "error");
     } finally {
       setUploading(false);
     }
   };
 
-  const preview = imageUrl ? resolveImageUrl(imageUrl) : undefined;
+  useEffect(() => () => {
+    if (localPreview) URL.revokeObjectURL(localPreview);
+  }, [localPreview]);
+
+  const preview = localPreview ?? (imageUrl ? resolveImageUrl(imageUrl) : undefined);
 
   return (
     <div style={{ marginBottom: 12 }}>
@@ -35,12 +53,12 @@ export const ImageUploader = ({ imageId, imageUrl, onUploaded }: ImageUploaderPr
           src={preview}
           alt="preview"
           style={{
-            width: 72,
-            height: 72,
+            width: "100%",
+            height: 220,
             objectFit: "cover",
-            borderRadius: 8,
+            borderRadius: 14,
             border: "1px solid var(--line)",
-            marginBottom: 8,
+            marginBottom: 12,
             display: "block",
           }}
         />
@@ -48,9 +66,9 @@ export const ImageUploader = ({ imageId, imageUrl, onUploaded }: ImageUploaderPr
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         hidden
-        onChange={(e) => handleSelect(e.target.files?.[0])}
+        onChange={(e) => { void handleSelect(e.target.files?.[0]); e.target.value = ""; }}
       />
       <button
         type="button"

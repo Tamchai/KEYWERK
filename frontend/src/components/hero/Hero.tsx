@@ -8,6 +8,7 @@ export const Hero = () => {
 
   return (
     <section
+      className="kw-hero"
       style={{
         background: "var(--bg-alt)",
         width: "100vw",                        // ⬅️ เพิ่ม
@@ -28,13 +29,14 @@ export const Hero = () => {
           margin: "0 auto",
         }}
       >
-        <div style={{ flex: "1 1 440px", minWidth: 280 }}>
+        <div className="kw-hero-copy" style={{ flex: "1 1 440px", minWidth: 280 }}>
+          <p className="kw-eyebrow">CUSTOM INPUT LAB / BANGKOK</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
             {KEY_ROW.map((k) => (
               <span
                 key={k}
                 style={{
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "var(--font-sans)",
                   fontSize: 12,
                   color: "var(--text-dim)",
                   background: "var(--surface)",
@@ -51,7 +53,7 @@ export const Hero = () => {
 
           <h1
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 800,
               fontSize: "clamp(34px, 5vw, 52px)",
               lineHeight: 1.1,
@@ -60,14 +62,14 @@ export const Hero = () => {
               margin: "0 0 20px",
             }}
           >
-            Every click
+            ออกแบบทุกสัมผัส
             <br />
-            is an Experience.
+            ให้เป็นของคุณ
           </h1>
 
           <p
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontSize: 15,
               lineHeight: 1.7,
               color: "var(--text-dim)",
@@ -75,9 +77,9 @@ export const Hero = () => {
               maxWidth: 480,
             }}
           >
-            Pick your switch. Pick your sound.
+            คีย์บอร์ด สวิตช์ และคีย์แคปที่คัดมาเพื่อคนจริงจังกับการพิมพ์
             <br />
-            Pick a typing experience you'll actually enjoy.
+            ตั้งแต่ชุดพร้อมใช้ไปจนถึงงานประกอบที่มีลายเซ็นของคุณเอง
           </p>
 
         <a  
@@ -90,7 +92,7 @@ export const Hero = () => {
               gap: 10,
               background: "var(--accent)",
               color: "#1c1810",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-sans)",
               fontWeight: 700,
               fontSize: 14,
               padding: "13px 22px",
@@ -98,7 +100,7 @@ export const Hero = () => {
               textDecoration: "none",
             }}
           >
-            ดูสินค้าทั้งหมด
+            เริ่มสร้างเซ็ตของคุณ
             <span
               style={{
                 display: "inline-flex",
@@ -109,9 +111,14 @@ export const Hero = () => {
               →
             </span>
           </a>
+          <div className="kw-hero-metrics">
+            <span><strong>01</strong> อุปกรณ์คัดสรร</span>
+            <span><strong>02</strong> สเปกชัดเจน</span>
+            <span><strong>03</strong> ส่งจากไทย</span>
+          </div>
         </div>
 
-        <div style={{ flex: "1 1 380px", minWidth: 260, display: "flex", justifyContent: "center" }}>
+        <div className="kw-hero-visual" style={{ flex: "1 1 380px", minWidth: 260, display: "flex", justifyContent: "center" }}>
           <img
             src={heroImage}
             alt="คีย์บอร์ดเชิงกลหลากสี จัดวางแบบเรียงเหลื่อม"
@@ -125,6 +132,7 @@ export const Hero = () => {
               filter: "drop-shadow(0 20px 40px rgba(0,0,0,.5))",
             }}
           />
+          <span className="kw-hero-index">KW / 26</span>
         </div>
       </div>
     </section>

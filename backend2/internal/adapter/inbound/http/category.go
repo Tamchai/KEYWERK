@@ -2,7 +2,9 @@ package http
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/keywerk/internal/core/domain/dto"
 	"github.com/keywerk/internal/core/domain/errs"
@@ -19,10 +21,11 @@ type CategoryHandler interface {
 
 type categoryHandler struct {
 	categoryService service.CategoryService
+	validator       *validator.Validate
 }
 
 func NewCategoryHandler(categoryService service.CategoryService) CategoryHandler {
-	return &categoryHandler{categoryService: categoryService}
+	return &categoryHandler{categoryService: categoryService, validator: validator.New()}
 }
 
 func (h *categoryHandler) ListCategories(c *fiber.Ctx) error {
@@ -41,7 +44,7 @@ func (h *categoryHandler) FindCategoryByID(c *fiber.Ctx) error {
 
 	category, err := h.categoryService.FindCategoryByID(id)
 	if err != nil {
-		return errs.Internal("not found category name", err)
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(category)
@@ -56,17 +59,16 @@ func (h *categoryHandler) UpdateCategory(c *fiber.Ctx) error {
 	var req dto.ReqCategory
 
 	if err := c.BodyParser(&req); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request"})
+		return errs.BadRequest("invalid request body", err)
 	}
-
-	if req.Name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "category name cannot be empty"})
+	req.Name = strings.TrimSpace(req.Name)
+	if err := h.validator.Struct(req); err != nil {
+		return errs.BadRequest("category name is required", err)
 	}
 
 	err := h.categoryService.UpdateCategory(id, req)
 	if err != nil {
-
-		return errs.Internal("can't update category name", err)
+		return err
 	}
 
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": "updated successfully"})
@@ -77,15 +79,16 @@ func (h *categoryHandler) SaveCategory(c *fiber.Ctx) error {
 
 	err := c.BodyParser(&req)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request"})
+		return errs.BadRequest("invalid request body", err)
 	}
-	if req.Name == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid request"})
+	req.Name = strings.TrimSpace(req.Name)
+	if err := h.validator.Struct(req); err != nil {
+		return errs.BadRequest("category name is required", err)
 	}
 
 	err = h.categoryService.SaveCategory(req)
 	if err != nil {
-		return errs.Internal("can't insert category", err)
+		return err
 	}
 
 	msg := fmt.Sprintf("created %s", req.Name)
@@ -94,7 +97,7 @@ func (h *categoryHandler) SaveCategory(c *fiber.Ctx) error {
 }
 
 func (h *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
-	id := c.Params("category_id")
+	id := c.Params("categoryID")
 
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "invalid category id"})
@@ -102,13 +105,8 @@ func (h *categoryHandler) DeleteCategory(c *fiber.Ctx) error {
 
 	err := h.categoryService.DeleteCategory(id)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"message": "cannot delete category"})
+		return err
 	}
 
-	msg := fmt.Sprintf("deleted %s successfully", id)
-
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{"message": msg})
+	return c.SendStatus(fiber.StatusNoContent)
 }
-
-// return status no content 204 dont return JSON
-// return c.Status(fiber.StatusNoContent)

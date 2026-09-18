@@ -7,6 +7,5 @@ type AddressRepository interface {
 	FindByUserID(userID string) ([]dto.Address, error)
 	FindByID(id string) (*dto.Address, error)
 	Update(dto.Address) error
-	Delete(id string) error
-	ClearDefault(userID string) error
+	Delete(address dto.Address) error
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/keywerk/internal/adapter/outbound/neon"
 	"github.com/keywerk/internal/core/domain/service"
 	"github.com/keywerk/internal/infrastructure"
+	"github.com/keywerk/internal/middleware"
 )
 
 func SetupUserRoutes(router fiber.Router) {
@@ -18,5 +19,7 @@ func SetupUserRoutes(router fiber.Router) {
 
 	user.Post("/login", userHandler.Login)
 	user.Post("/register", userHandler.Register)
+	user.Get("/profile", middleware.AuthMiddleware(), userHandler.GetProfile)
+	user.Patch("/profile", middleware.AuthMiddleware(), userHandler.UpdateProfile)
 
 }

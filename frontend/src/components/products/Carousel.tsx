@@ -66,7 +66,7 @@ export const Carousel = ({ images, height = 400 }: CarouselProps) => {
           alignItems: "center",
           justifyContent: "center",
           color: "var(--text-dim)",
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "var(--font-sans)",
           fontSize: 14,
         }}
       >

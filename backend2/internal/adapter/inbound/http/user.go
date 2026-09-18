@@ -10,6 +10,8 @@ import (
 type UserHandler interface {
 	Login(c *fiber.Ctx) error
 	Register(c *fiber.Ctx) error
+	GetProfile(c *fiber.Ctx) error
+	UpdateProfile(c *fiber.Ctx) error
 }
 
 type userHandler struct {
@@ -19,6 +21,34 @@ type userHandler struct {
 
 func NewUserHandler(userService service.UserService) UserHandler {
 	return &userHandler{userService: userService, validator: validator.New()}
+}
+
+func (h *userHandler) GetProfile(c *fiber.Ctx) error {
+	userID, err := GetUserIDFromCtx(c)
+	if err != nil {
+		return err
+	}
+	profile, err := h.userService.GetProfile(userID)
+	if err != nil {
+		return err
+	}
+	return c.JSON(profile)
+}
+
+func (h *userHandler) UpdateProfile(c *fiber.Ctx) error {
+	userID, err := GetUserIDFromCtx(c)
+	if err != nil {
+		return err
+	}
+
+	var req dto.ReqUpdateProfile
+	if err := c.BodyParser(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "invalid body")
+	}
+	if err := h.userService.UpdateProfile(userID, req); err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{"message": "profile updated successfully"})
 }
 
 func (h *userHandler) Login(c *fiber.Ctx) error {
@@ -31,14 +61,12 @@ func (h *userHandler) Login(c *fiber.Ctx) error {
 
 	err = h.validator.Struct(req)
 	if err != nil {
-		for _, e := range err.(validator.ValidationErrors) {
-			return c.Status(400).JSON(fiber.Map{"error": "Validation error on field: " + e.StructField() + " - " + e.Tag()})
-		}
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "email and password are required"})
 	}
 
 	token, err := h.userService.Login(req)
 	if err != nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
+		return err
 	}
 
 	return c.Status(200).JSON(fiber.Map{
@@ -59,9 +87,7 @@ func (h *userHandler) Register(c *fiber.Ctx) error {
 
 	// ตรวจสอบ field ว่าส่งมาครบไหม
 	if err := h.validator.Struct(body); err != nil {
-		for _, e := range err.(validator.ValidationErrors) {
-			return c.Status(400).JSON(fiber.Map{"error": "Validation error on field: " + e.StructField() + " - " + e.Tag()})
-		}
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "name, email, password and confirm_password are required"})
 	}
 
 	if body.Password != body.ConfirmPassword {
@@ -70,7 +96,7 @@ func (h *userHandler) Register(c *fiber.Ctx) error {
 
 	err = h.userService.Register(body)
 	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"message": ""})
+		return err
 	}
 
 	return c.JSON(fiber.Map{"message": "register successfully"})

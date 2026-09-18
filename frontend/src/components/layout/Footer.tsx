@@ -1,5 +1,6 @@
 export const Footer = () => (
   <footer
+    className="kw-site-footer"
     style={{
       background: "var(--bg-alt)",
       width: "100vw",
@@ -17,7 +18,7 @@ export const Footer = () => (
         justifyContent: "space-between",
         alignItems: "center",
         gap: 12,
-        fontFamily: "'JetBrains Mono', monospace",
+        fontFamily: "var(--font-sans)",
         fontSize: 13,
         color: "var(--text-dim)",
       }}

@@ -8,6 +8,7 @@ function getRoleFromToken(token: string | null): string | null {
     const payload = token.split(".")[1];
     if (!payload) return null;
     const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    if (typeof json?.exp !== "number" || json.exp * 1000 <= Date.now()) return null;
     const role = json?.user_role;
     return typeof role === "string" ? role : null;
   } catch {
@@ -20,6 +21,8 @@ interface AuthState {
   email: string | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
+  hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
@@ -32,6 +35,8 @@ export const useAuthStore = create<AuthState>()(
       email: null,
       isLoggedIn: false,
       isAdmin: false,
+      hasHydrated: false,
+      setHasHydrated: (value) => set({ hasHydrated: value }),
 
       login: async (loginEmail: string, loginPassword: string) => {
         const response = await apiLogin({ email: loginEmail, password: loginPassword });
@@ -65,8 +70,10 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isLoggedIn = Boolean(state.token);
-          state.isAdmin = getRoleFromToken(state.token) === "admin";
+          const role = getRoleFromToken(state.token);
+          state.isLoggedIn = role === "member" || role === "admin";
+          state.isAdmin = role === "admin";
+          state.setHasHydrated(true);
         }
       },
     },

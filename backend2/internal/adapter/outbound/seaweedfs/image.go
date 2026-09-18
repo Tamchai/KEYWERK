@@ -67,6 +67,19 @@ func (r *imageRepository) SaveImageMetadata(ctx context.Context, image dto.Image
 	return nil
 }
 
+func (r *imageRepository) DeleteImage(ctx context.Context, imageID, objectKey string) error {
+	var dbErr error
+	if imageID != "" {
+		_, dbErr = r.db.ExecContext(ctx, `DELETE FROM images WHERE image_id = $1`, imageID)
+	}
+
+	_, objectErr := r.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(r.bucketName),
+		Key:    aws.String(objectKey),
+	})
+	return errors.Join(dbErr, objectErr)
+}
+
 // func (r *imageRepository) RemoveImage(ctx context.Context, imageData dto.ReqImageData) error {
 
 // 	r.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{

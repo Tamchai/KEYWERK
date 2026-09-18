@@ -9,4 +9,5 @@ import (
 type ImageRepository interface {
 	UploadToSeaweed(ctx context.Context, imageData dto.ReqImageData) (string, error)
 	SaveImageMetadata(ctx context.Context, image dto.Image) error
+	DeleteImage(ctx context.Context, imageID, objectKey string) error
 }

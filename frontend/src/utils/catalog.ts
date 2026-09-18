@@ -1,6 +1,8 @@
 import type { Brand, Category, DisplayProduct, Product, ProductVariant } from "../api/types";
 import { formatPriceTHB } from "./format";
 import { resolveProductImage } from "./image";
+import { collectVariantImageUrls } from "./imageUrl";
+import { resolveImageUrl } from "./image";
 
 export function buildDisplayProducts(
   products: Product[],
@@ -20,6 +22,12 @@ export function buildDisplayProducts(
 
   return products.map((product) => {
     const productVariants = variantsByProduct.get(product.product_id) ?? [];
+    const fallbackImage = resolveProductImage(product, productVariants);
+    const variantImages = collectVariantImageUrls(
+      productVariants.map((variant) => variant.image_url),
+      resolveImageUrl,
+    );
+    const images = variantImages.length > 0 ? variantImages : [fallbackImage];
     const cheapestVariant = productVariants.reduce<ProductVariant | undefined>((best, current) => {
       if (!best || current.price < best.price) return current;
       return best;
@@ -27,7 +35,8 @@ export function buildDisplayProducts(
 
     return {
       id: product.product_id,
-      image: resolveProductImage(product, productVariants),
+      image: images[0],
+      images,
       category: categoryMap.get(product.category_id) ?? "",
       brand: brandMap.get(product.brand_id),
       name: product.product_name,

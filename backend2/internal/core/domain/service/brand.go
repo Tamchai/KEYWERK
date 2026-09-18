@@ -35,6 +35,9 @@ func (s *brandService) CreateBrand(req dto.ReqBrand) error {
 
 	err := s.brandRepo.Save(brand)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return errs.Conflict("brand name already exists", err)
+		}
 		return errs.Internal("can't create brand", err)
 	}
 
@@ -42,6 +45,9 @@ func (s *brandService) CreateBrand(req dto.ReqBrand) error {
 }
 
 func (s *brandService) FindBrandByID(brandID string) (*dto.ResBrand, error) {
+	if err := validateUUID(brandID, "brand id"); err != nil {
+		return nil, err
+	}
 
 	brand, err := s.brandRepo.Get(brandID)
 
@@ -85,6 +91,9 @@ func (s *brandService) ListBrands() (*[]dto.ResBrand, error) {
 }
 
 func (s *brandService) UpdateBrand(brandID string, req dto.ReqBrand) error {
+	if err := validateUUID(brandID, "brand id"); err != nil {
+		return err
+	}
 
 	updateBrand := dto.Brand{
 		Name: req.Name,
@@ -92,6 +101,9 @@ func (s *brandService) UpdateBrand(brandID string, req dto.ReqBrand) error {
 
 	err := s.brandRepo.Update(updateBrand, brandID)
 	if err != nil {
+		if isUniqueViolation(err) {
+			return errs.Conflict("brand name already exists", err)
+		}
 		return errs.Internal("can't update brand name", err)
 	}
 
@@ -99,6 +111,9 @@ func (s *brandService) UpdateBrand(brandID string, req dto.ReqBrand) error {
 }
 
 func (s *brandService) DeleteBrand(brandID string) error {
+	if err := validateUUID(brandID, "brand id"); err != nil {
+		return err
+	}
 
 	err := s.brandRepo.Delete(brandID)
 
