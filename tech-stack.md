@@ -1,141 +1,289 @@
-# KEYWERK — Technology Stack & Architecture Reference
+# KEYWERK — Technology Stack and Architecture
 
-> **Project:** KEYWERK (Mechanical Keyboard E-Commerce Platform)  
-> **Status:** Active Development  
-> **Note:** The active backend is `backend2/`. The `backend/` folder is legacy and ignored.
+เอกสารนี้อธิบายเทคโนโลยี โครงสร้างระบบ และขอบเขตความรับผิดชอบของ KEYWERK ตามโค้ดปัจจุบัน
 
----
+> สถานะ: Active development สำหรับ local/test environment โดย backend หลักอยู่ใน `backend/`
 
-## 1. Executive Summary
+## ภาพรวมระบบ
 
-KEYWERK is built using a modern decoupled architecture:
-- **Frontend SPA**: React 19 + TypeScript + Vite 8 + Tailwind CSS v4
-- **Backend API**: Go 1.25 + Fiber v2 with Hexagonal Architecture (Ports & Adapters)
-- **Database**: Neon Serverless PostgreSQL (Cloud)
-- **Object Storage**: SeaweedFS (S3-compatible distributed storage via Docker)
-
----
-
-## 2. Frontend Technology Stack (`frontend/`)
-
-| Category | Technology | Version | Purpose & Description |
-| :--- | :--- | :--- | :--- |
-| **Core Framework** | [React](https://react.dev/) | `^19.2.7` | UI component rendering with React 19 concurrent features |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) | `~6.0.2` | Static type safety and developer productivity |
-| **Build Tool & Dev Server** | [Vite](https://vitejs.dev/) | `^8.1.1` | Ultra-fast Hot Module Replacement (HMR) and bundling |
-| **Styling Framework** | [Tailwind CSS](https://tailwindcss.com/) | `^4.3.2` | Next-generation engine with `@tailwindcss/vite` plugin |
-| **Animation Library** | [Motion](https://motion.dev/) | `^12.42.2` | Modern declarative animations and micro-interactions |
-| **Routing** | [React Router DOM](https://reactrouter.com/) | `^7.18.1` | Client-side routing, protected routes, URL hash navigation |
-| **Iconography** | [Lucide React](https://lucide.dev/) | `^1.24.0` | Clean, customizable vector icons |
-| **Linter** | [Oxlint](https://oxc.rs/) | `^1.71.0` | High-performance Rust-based JavaScript/TypeScript linter |
-| **Utility** | [clsx](https://github.com/lukeed/clsx) | `^2.1.1` | Conditional class name concatenation |
-
-### Design System & Theme Engine
-- **Aesthetic:** Cyberpunk / Industrial Luxury Mechanical Keyboard theme.
-- **Palette Tokens (CSS Variables):**
-  - `--bg`: `#0e0c08` (Deep dark background)
-  - `--bg-alt`: `#17140d` (Secondary background)
-  - `--surface`: `#1f1b12` (Card and modal surfaces)
-  - `--surface-top`: `#292319` (Elevated elements)
-  - `--line`: `#35301f` (Borders and dividers)
-  - `--text`: `#f2ede0` (Warm primary text)
-  - `--text-dim`: `#a89f8a` (Muted secondary text)
-  - `--accent`: `#e8b923` (Signature Gold/Amber brand accent)
-- **Typography:**
-  - Code/Accent: `'JetBrains Mono', monospace`
-  - Body/Interface: `'Inter', system-ui, sans-serif`
-
----
-
-## 3. Backend Technology Stack (`backend2/`)
-
-| Category | Technology | Version | Purpose & Description |
-| :--- | :--- | :--- | :--- |
-| **Language** | [Go](https://go.dev/) | `1.25.1` | High-performance compiled language for backend APIs |
-| **Web Framework** | [Fiber v2](https://gofiber.io/) | `v2.52.14` | Express-inspired web framework built on Fasthttp |
-| **Database Library** | [sqlx](https://github.com/jmoiron/sqlx) | `v1.4.0` | Extensions to Go's standard `database/sql` for struct scanning |
-| **Database Driver** | [lib/pq](https://github.com/lib/pq) | `v1.12.3` | Pure Go PostgreSQL driver for database connections |
-| **Storage SDK** | [AWS SDK for Go v2](https://github.com/aws/aws-sdk-go-v2) | `v1.43.5` (S3: `v1.107.1`) | S3 API integration for SeaweedFS media management |
-| **Configuration** | [Viper](https://github.com/spf13/viper) | `v1.21.0` | Complete configuration solution for YAML & environment variables |
-| **Authentication** | [golang-jwt/jwt/v5](https://github.com/golang-jwt/jwt) & [gofiber/jwt/v4](https://github.com/gofiber/jwt) | `v5.3.1` / `v4.0.0` | JWT token generation, parsing, and route protection middleware |
-| **Cryptography** | [golang.org/x/crypto](https://pkg.go.dev/golang.org/x/crypto) | `v0.54.0` | Secure password hashing using `bcrypt` |
-| **Validation** | [validator/v10](https://github.com/go-playground/validator) | `v10.30.3` | Struct and field validation for incoming DTOs |
-| **Identifier** | [google/uuid](https://github.com/google/uuid) | `v1.6.0` | UUID v4 generation for entity identifiers |
-
----
-
-## 4. Infrastructure & Database
-
-| Service | Technology | Details |
-| :--- | :--- | :--- |
-| **Relational Database** | **Neon PostgreSQL** | Serverless PostgreSQL in AWS `ap-southeast-1` with connection pooling |
-| **Object Storage** | **SeaweedFS** | Self-hosted S3-compatible distributed storage for product images & assets (Docker container) |
-| **Cache (Prepared)** | **Redis** | In-memory key-value store configured for session/cache scaling |
-| **Containerization** | **Docker & Docker Compose** | Multi-container setup for local development (SeaweedFS storage cluster) |
-
----
-
-## 5. Architectural Patterns & Decisions
-
-### 5.1 Hexagonal Architecture (Ports & Adapters) in `backend2/`
-The backend adopts Hexagonal Architecture to isolate domain logic from external dependencies:
+KEYWERK ใช้สถาปัตยกรรมแบบแยก Frontend SPA ออกจาก REST API:
 
 ```text
-               ┌────────────────────────────────────────────────────────┐
-               │                        backend2                        │
-               │                                                        │
-HTTP Client ───┼─► Inbound HTTP Adapters (Fiber Handlers)               │
-               │                 │                                      │
-               │                 ▼                                      │
-               │         Core Domain Services (Business Rules)          │
-               │                 │                                      │
-               │                 ▼                                      │
-               │         Core Port Interfaces (Repository Contracts)    │
-               │                 │                                      │
-               │                 ▼                                      │
-Database / S3 ◄┼── Outbound Adapters (Neon PostgreSQL / SeaweedFS S3)  │
-               └────────────────────────────────────────────────────────┘
+Browser
+  │
+  ▼
+React SPA ───────► Go/Fiber REST API ───────► PostgreSQL / Neon
+                        │
+                        ├────────────────────► SeaweedFS S3
+                        │                       ├── products
+                        │                       └── profiles
+                        │
+                        └────────────────────► Stripe Checkout
+                                                ▲
+                                                └── Signed Webhook
 ```
 
-**Benefits:**
-- **Testability:** Core domain services can be unit-tested by mocking repository ports.
-- **Maintainability:** Swapping databases or storage providers (e.g. SeaweedFS to AWS S3 or MinIO) requires modifying only the outbound adapter layer without touching business logic.
-- **Clear Separation of Concerns:** HTTP routing/serialization is decoupled from domain entities and persistence queries.
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript 6, Vite 8, Tailwind CSS 4 |
+| Client state | Zustand, TanStack Query |
+| Backend | Go 1.25, Fiber v2, Ports and Adapters |
+| Database | PostgreSQL / Neon ผ่าน sqlx และ lib/pq |
+| Object storage | SeaweedFS ผ่าน S3-compatible API |
+| Payment | Stripe Checkout test mode และ signed webhook |
+| API contract | OpenAPI 3.0.3 |
 
-### 5.2 Tailwind CSS v4 + Zero-Runtime Styling
-The frontend adopts Tailwind CSS v4 with Vite integration:
-- Uses the unified `@import "tailwindcss";` directive in CSS.
-- Integrates seamlessly with CSS custom properties (variables) for theme switching and consistency.
-- Drastically reduced build times compared to previous Tailwind versions.
+## Frontend (`frontend/`)
 
----
+### Dependencies หลัก
 
-## 6. Directory and Responsibility Mapping
+| Category | Package | Version | หน้าที่ |
+| --- | --- | --- | --- |
+| UI runtime | React / React DOM | `^19.2.7` | Component rendering |
+| Language | TypeScript | `~6.0.2` | Static type checking |
+| Build tool | Vite | `^8.1.1` | Dev server, HMR และ production build |
+| Styling | Tailwind CSS | `^4.3.2` | Utility-first CSS ผ่าน Vite plugin |
+| Routing | React Router DOM | `^7.18.1` | Public, protected และ admin routes |
+| Server state | TanStack React Query | `^5.102.8` | Query cache, mutation และ request state |
+| Client state | Zustand | `^5.0.15` | Authentication และ cart state |
+| Accessible UI | Radix Alert Dialog | `^1.1.23` | Confirm/prompt dialog ที่ไม่ใช้ browser alert |
+| Toast | Sonner | `^2.0.8` | Non-blocking notifications |
+| Icons | Lucide React | `^1.47.0` | SVG icon components |
+| Class utilities | CVA, clsx, tailwind-merge | ตาม `package.json` | Variant และ class composition |
+| Linter | Oxlint | `^1.71.0` | JavaScript/TypeScript linting |
+
+### Frontend architecture
 
 ```text
-KEYWERK
-├── frontend/
-│   ├── src/
-│   │   ├── components/layout/   # Global UI shell (Navbar, Footer, SearchModal)
-│   │   ├── components/hero/     # Promotional hero banner and animated highlights
-│   │   ├── components/products/ # Reusable product cards and category grids
-│   │   ├── context/             # Global states (AuthContext, user session)
-│   │   ├── pages/               # Routed views (Home, Keyboard, Switches, Keycaps, Cart, Profile, etc.)
-│   │   └── index.css            # Core color system, CSS variables & typography
-│
-├── backend2/
-│   ├── cmd/
-│   │   ├── main.go              # Entry point, config loader, DB connector, server bootstrap
-│   │   └── router/v1/           # API v1 endpoint mapping
-│   ├── internal/
-│   │   ├── core/domain/dto/     # Input/Output DTO structs with tags
-│   │   ├── core/domain/service/ # Pure business logic layer
-│   │   ├── core/port/           # Repository and storage interface definitions
-│   │   ├── adapter/inbound/     # Fiber HTTP handlers & controllers
-│   │   ├── adapter/outbound/    # Neon DB implementations (SQL queries) & S3 storage
-│   │   ├── infrastructure/      # DB connection setup
-│   │   └── middleware/          # JWT authentication and Admin role enforcement
-│   └── docker-compose.yml       # SeaweedFS local storage configuration
-│
-└── backend/                     # [DEPRECATED] Ignored by development workflows
+frontend/src/
+├── api/                  # HTTP client, endpoint functions และ shared API types
+├── components/
+│   ├── account/          # Account page primitives
+│   ├── admin/            # Admin modal, upload และ pagination
+│   ├── layout/           # Navbar และ Footer
+│   ├── products/         # Product cards, grids และ carousel
+│   ├── routing/          # ProtectedRoute, AdminRoute และ session sync
+│   └── ui/               # Button, dialog provider และ toaster
+├── hooks/
+│   ├── queries/          # TanStack Query hooks
+│   ├── usePagination.ts
+│   └── useAdminTablePageSize.ts
+├── pages/                # Customer และ Admin route components
+├── stores/               # Zustand auth/cart stores
+├── utils/                # Catalog, image, formatting และ pagination logic
+├── App.tsx               # Route tree และ lazy-loaded pages
+└── index.css             # Tailwind import, tokens และ global styling
 ```
+
+### State ownership
+
+- TanStack Query ดูแลข้อมูลจาก API เช่น catalog, orders, payments และ admin lists
+- Zustand ดูแล authentication session และ cart state ที่ต้องแชร์ข้ามหน้า
+- React local state ใช้กับ form, modal, filter และ UI state ภายใน component
+- `SessionSync` ประสาน session กับ server cart เมื่อ login/logout
+
+### Styling และ design system
+
+- Tailwind CSS v4 โหลดผ่าน `@tailwindcss/vite`
+- Radix UI ใช้สำหรับ accessible dialog primitives
+- CSS variables ใน `index.css` เป็นแหล่งสีและพื้นผิวร่วมกัน
+- หน้า Admin desktop ใช้ viewport-locked layout และคำนวณจำนวนแถวต่อหน้าให้พอดีกับพื้นที่
+- ฟอนต์หลักคือ `Google Sans Flex` และ fallback ภาษาไทยเป็น `Noto Sans Thai`
+
+```css
+--font-sans: 'Google Sans Flex', 'Noto Sans Thai', system-ui, sans-serif;
+```
+
+สีหลักที่ใช้งาน:
+
+| Token | ค่า | การใช้งาน |
+| --- | --- | --- |
+| `--bg` | `#0e0c08` | พื้นหลังหลัก |
+| `--bg-alt` | `#17140d` | พื้นหลังรอง |
+| `--surface` | `#1f1b12` | Card และ modal |
+| `--surface-top` | `#292319` | Elevated surface |
+| `--line` | `#35301f` | Border และ divider |
+| `--text` | `#f2ede0` | ข้อความหลัก |
+| `--text-dim` | `#a89f8a` | ข้อความรอง |
+| `--accent` | `#e8b923` | Brand accent |
+
+### Frontend development flow
+
+Vite proxy ส่ง request ที่ขึ้นต้นด้วย `/api` ไปยัง backend:
+
+```text
+http://localhost:5173/api/* → http://127.0.0.1:8080/api/*
+```
+
+สามารถ override ด้วย `VITE_API_BASE_URL` ใน `frontend/.env`
+
+## Backend (`backend/`)
+
+### Dependencies หลัก
+
+| Category | Package | Version | หน้าที่ |
+| --- | --- | --- | --- |
+| Language | Go | `1.25.1` | Backend runtime |
+| HTTP framework | Fiber v2 | `v2.52.14` | Router, middleware และ HTTP handlers |
+| Database access | sqlx | `v1.4.0` | SQL execution และ struct scanning |
+| PostgreSQL driver | lib/pq | `v1.12.3` | PostgreSQL connectivity |
+| Configuration | Viper | `v1.21.0` | YAML config และ environment overrides |
+| Authentication | golang-jwt/jwt v5 | `v5.3.1` | JWT creation และ claims |
+| Fiber JWT middleware | gofiber/jwt v4 | `v4.0.0` | Protected route middleware |
+| Validation | validator/v10 | `v10.30.3` | Request DTO validation |
+| Password hashing | x/crypto/bcrypt | `v0.54.0` | Password hashing และ verification |
+| UUID | google/uuid | `v1.6.0` | Entity identifiers |
+| S3 client | AWS SDK for Go v2 | Core `v1.43.5`, S3 `v1.107.1` | SeaweedFS object storage |
+| Payment SDK | stripe-go v82 | `v82.5.1` | Checkout Session และ webhook verification |
+
+### Ports and Adapters
+
+Backend แบ่ง dependency direction เพื่อแยก business rules ออกจาก Fiber, PostgreSQL, SeaweedFS และ Stripe:
+
+```text
+cmd/router
+    │
+    ▼
+adapter/inbound/http       Fiber handlers และ request/response mapping
+    │
+    ▼
+core/domain/service        Business rules
+    │
+    ▼
+core/port                  Repository และ payment gateway interfaces
+    │
+    ▼
+adapter/outbound           PostgreSQL, SeaweedFS และ Stripe implementations
+```
+
+```text
+backend/
+├── cmd/
+│   ├── main.go                       # Server bootstrap และ global middleware
+│   ├── resetdb/main.go               # Development database reset command
+│   └── router/v1/                    # API v1 route registration
+├── internal/
+│   ├── adapter/
+│   │   ├── inbound/http/             # Fiber handlers
+│   │   ├── inbound/s3/               # S3 client และ bucket initialization
+│   │   └── outbound/
+│   │       ├── neon/                 # PostgreSQL repository implementations
+│   │       ├── seaweedfs/            # Image storage implementation
+│   │       └── stripe/               # Stripe payment gateway
+│   ├── core/
+│   │   ├── domain/dto/               # Domain and transport data structures
+│   │   ├── domain/service/           # Business services
+│   │   └── port/                     # Repository/gateway contracts
+│   ├── infrastructure/
+│   │   ├── migrations/               # Ordered SQL migrations
+│   │   ├── config.go                 # Viper configuration
+│   │   └── neon.go                   # Database lifecycle
+│   └── middleware/                   # JWT และ admin authorization
+├── config.example.yaml
+├── docker-compose.yml
+└── openapi.yaml
+```
+
+### API และ authorization
+
+- API prefix: `/api/v1`
+- JWT Bearer token ใช้กับ profile, address, cart, order และ payment routes
+- Admin routes ตรวจทั้ง JWT และ claim `user_role=admin`
+- OpenAPI ปัจจุบันมี 30 paths และ 49 operations
+- Error response ภายนอกส่งเฉพาะข้อความที่ปลอดภัย ไม่เปิดเผย internal error
+
+### Database และ migrations
+
+- รองรับ PostgreSQL และ Neon
+- SQL migrations อยู่ใน `backend/internal/infrastructure/migrations/`
+- Backend รัน migration ที่ยังไม่เคยใช้เมื่อเริ่มระบบ
+- ตาราง `schema_migrations` บันทึก migration ที่ทำสำเร็จแล้ว
+- คำสั่ง `cmd/resetdb` เปิดให้ใช้เฉพาะ `app.env: dev`
+- Development admin ถูก seed เมื่อ `dev_admin.enabled: true`
+
+### Object storage
+
+SeaweedFS รันผ่าน Docker Compose และเปิด S3-compatible endpoint ที่พอร์ต `8333`
+
+| Bucket | ข้อมูล |
+| --- | --- |
+| `products` | รูป Product Variant |
+| `profiles` | รูปโปรไฟล์ผู้ใช้ |
+
+Backend ตรวจและสร้าง bucket ที่ขาดให้อัตโนมัติตอนเริ่มทำงาน รูปที่รองรับคือ JPEG, PNG และ WebP ขนาดไม่เกิน 5 MB ต่อไฟล์
+
+### Payment flow
+
+```text
+Customer creates order
+        │
+        ▼
+Backend creates/resumes Stripe Checkout Session
+        │
+        ▼
+Customer completes Stripe-hosted Checkout
+        │
+        ▼
+Stripe sends signed webhook
+        │
+        ▼
+Backend verifies signature and updates payment/order atomically
+```
+
+- ใช้ Stripe test mode เท่านั้น
+- Checkout Session ที่ยังใช้งานได้สามารถถูก resume ได้
+- Webhook event ถูกประมวลผลแบบ idempotent
+- หน้า payment success ไม่สามารถเปลี่ยนสถานะเป็น `paid` เอง
+- Admin verification เป็น operational fallback ไม่ใช่ payment flow หลัก
+
+## Infrastructure สำหรับ Local Development
+
+| Service | Port | รายละเอียด |
+| --- | --- | --- |
+| Frontend | `5173` | Vite development server |
+| Backend | `8080` | Fiber REST API |
+| SeaweedFS Master | `9333` | Cluster master |
+| SeaweedFS S3 | `8333` | S3-compatible API |
+| SeaweedFS Filer | `8888` | Filer HTTP/UI |
+| SeaweedFS Volume | `9340` | Volume server |
+| PostgreSQL/Neon | `5432` | Relational database |
+
+Redis ไม่ได้อยู่ใน runtime stack ปัจจุบัน
+
+## Configuration และ secrets
+
+Backend โหลดค่าจาก `backend/config.yaml` และสามารถ override ด้วย environment variables ผ่าน Viper ส่วน frontend โหลด `VITE_API_BASE_URL` จาก `frontend/.env`
+
+ไฟล์ที่ต้องไม่ commit:
+
+- `backend/config.yaml`
+- `backend/.env`
+- `frontend/.env`
+- Stripe secret keys และ webhook signing secret
+- Database credentials
+
+ไฟล์ตัวอย่างที่ commit ได้:
+
+- `backend/config.example.yaml`
+- `frontend/.env.example`
+
+## Quality Gates
+
+Frontend:
+
+```powershell
+cd frontend
+npm test
+npm run lint
+npm run build
+```
+
+Backend:
+
+```powershell
+cd backend
+go test ./...
+go vet ./...
+```
+
+รายละเอียดการติดตั้งและรันระบบอยู่ใน [`README.md`](README.md) และ API contract อยู่ใน [`backend/openapi.yaml`](backend/openapi.yaml)
