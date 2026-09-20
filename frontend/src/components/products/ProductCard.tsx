@@ -9,10 +9,11 @@ interface ProductCardProps {
   brand?: string;
   name: string;
   price: string;
+  totalSold: number;
   href: string;
 }
 
-export const ProductCard = ({ image, images, category, brand, name, price, href }: ProductCardProps) => {
+export const ProductCard = ({ image, images, category, brand, name, price, totalSold, href }: ProductCardProps) => {
   const gallery = images.length > 0 ? images : [image];
   const [activeIndex, setActiveIndex] = useState(0);
   const hasGallery = gallery.length > 1;
@@ -72,15 +73,16 @@ export const ProductCard = ({ image, images, category, brand, name, price, href 
       <Link className="flex flex-1 flex-col p-[18px] no-underline" to={href}>
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            {brand ? <p className="truncate text-[11px] font-bold uppercase tracking-[.08em] text-[var(--accent)]">{brand}</p> : null}
-            <p className="mt-1 text-xs text-[var(--text-dim)]">{category}</p>
+            {brand ? <p className="truncate text-sm font-bold text-[var(--accent)]">{brand}</p> : null}
+            <p className="mt-1 text-sm text-[var(--text-dim)]">{category}</p>
           </div>
           <span className="grid h-8 w-8 shrink-0 place-items-center !rounded-full bg-white/5 text-[var(--text-dim)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-[#18140a]"><ArrowUpRight size={16} /></span>
         </div>
-        <h3 className="mb-4 line-clamp-2 text-base font-bold leading-snug text-[var(--text)]">{name}</h3>
+        <h3 className="mb-4 line-clamp-2 text-lg font-bold leading-snug text-[var(--text)]">{name}</h3>
+        <p className="mb-3 text-sm text-[var(--text-dim)]">ขายแล้ว {totalSold.toLocaleString("th-TH")} ชิ้น</p>
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-[var(--line)] pt-3">
-          <span className="text-[11px] text-[var(--text-dim)]">ราคาเริ่มต้น</span>
-          <strong className="text-base text-[var(--accent)]">{price}</strong>
+          <span className="text-sm text-[var(--text-dim)]">ราคาเริ่มต้น</span>
+          <strong className="text-lg text-[var(--accent)]">{price}</strong>
         </div>
       </Link>
     </article>

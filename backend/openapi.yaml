@@ -961,6 +961,35 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /orders/{orderID}/cancel:
+    post:
+      tags:
+        - Orders
+      summary: Cancel own unpaid pending order
+      description: Cancels an order and restores variant stock. Pending Stripe payments and paid orders cannot be cancelled through this endpoint.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '403':
+          description: Order belongs to another user
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Order is no longer pending or payment is in progress
+
   /orders/{orderID}/address:
     put:
       tags:
@@ -1170,6 +1199,38 @@ paths:
                     type: string
                   data:
                     $ref: '#/components/schemas/ResPayment'
+
+  /payments/order/{orderID}/reconcile:
+    post:
+      tags:
+        - Payments
+      summary: Check a pending Checkout Session against Stripe
+      description: Authenticated customer (or admin) requests a server-side status check when a webhook is delayed. The server verifies the Checkout Session ID and order/payment metadata before updating a payment.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: orderID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Latest payment status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/ResPayment'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          description: Stripe is temporarily unavailable
 
   # ─── ADMIN PAYMENTS ─────────────────────────────────────────────────────────
   /admin/payments:

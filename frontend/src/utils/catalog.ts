@@ -41,6 +41,7 @@ export function buildDisplayProducts(
       brand: brandMap.get(product.brand_id),
       name: product.product_name,
       price: cheapestVariant ? formatPriceTHB(cheapestVariant.price) : "—",
+      totalSold: product.total_sold,
       href: `/product/${product.product_id}`,
     };
   });

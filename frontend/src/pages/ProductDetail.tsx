@@ -87,7 +87,7 @@ export const ProductDetail = () => {
                 to="/"
                 style={{
                   fontFamily: "var(--font-sans)",
-                  fontSize: 13,
+                  fontSize: 14,
                   color: "var(--accent)",
                   textDecoration: "none",
                 }}
@@ -102,7 +102,7 @@ export const ProductDetail = () => {
               <nav
                 style={{
                   fontFamily: "var(--font-sans)",
-                  fontSize: 12.5,
+                  fontSize: 14,
                   color: "var(--text-dim)",
                   display: "flex",
                   gap: 8,
@@ -134,7 +134,7 @@ export const ProductDetail = () => {
                         margin: 0,
                         fontFamily: "var(--font-sans)",
                         fontWeight: 700,
-                        fontSize: 11.5,
+                        fontSize: 14,
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",
                         color: "var(--accent)",
@@ -162,7 +162,7 @@ export const ProductDetail = () => {
                       style={{
                         margin: 0,
                         fontFamily: "var(--font-sans)",
-                        fontSize: 13.5,
+                        fontSize: 16,
                         color: "var(--text-dim)",
                         lineHeight: 1.7,
                       }}
@@ -186,7 +186,7 @@ export const ProductDetail = () => {
                         <span
                           style={{
                             fontWeight: 400,
-                            fontSize: 13,
+                            fontSize: 14,
                             color: "var(--text-dim)",
                             marginLeft: 8,
                           }}
@@ -197,18 +197,7 @@ export const ProductDetail = () => {
                     </p>
                   )}
 
-                  {product.total_sold > 0 && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontFamily: "var(--font-sans)",
-                        fontSize: 12.5,
-                        color: "var(--text-dim)",
-                      }}
-                    >
-                      ขายแล้ว {product.total_sold.toLocaleString()} ชิ้น
-                    </p>
-                  )}
+                  <p className="kw-sales-count">ขายแล้ว <strong>{product.total_sold.toLocaleString("th-TH")}</strong> ชิ้น</p>
                 </div>
               </div>
 
@@ -264,7 +253,7 @@ export const ProductDetail = () => {
                               }}
                             />
                           ) : (
-                            <span style={{ color: "var(--text-dim)", fontSize: 11 }}>—</span>
+                            <span style={{ color: "var(--text-dim)", fontSize: 14 }}>—</span>
                           )}
                         </div>
 
@@ -274,7 +263,7 @@ export const ProductDetail = () => {
                               margin: "0 0 4px",
                               fontFamily: "var(--font-sans)",
                               fontWeight: 700,
-                              fontSize: 14,
+                              fontSize: 16,
                               color: "var(--text)",
                             }}
                           >
@@ -287,7 +276,7 @@ export const ProductDetail = () => {
                                   key={key}
                                   style={{
                                     fontFamily: "var(--font-sans)",
-                                    fontSize: 11,
+                                    fontSize: 13,
                                     color: "var(--text-dim)",
                                     background: "var(--bg)",
                                     padding: "3px 8px",
@@ -317,7 +306,7 @@ export const ProductDetail = () => {
                             style={{
                               margin: 0,
                               fontFamily: "var(--font-sans)",
-                              fontSize: 12,
+                              fontSize: 14,
                               color: variant.stock > 0 ? "var(--text-dim)" : "#e85d5d",
                             }}
                           >
@@ -336,7 +325,7 @@ export const ProductDetail = () => {
                                 borderRadius: 6,
                                 padding: "8px 16px",
                                 fontFamily: "var(--font-sans)",
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: 700,
 								cursor: cartLoading ? "not-allowed" : "pointer",
 								opacity: cartLoading ? 0.6 : 1,

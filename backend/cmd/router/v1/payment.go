@@ -30,6 +30,7 @@ func SetupPaymentRoutes(router fiber.Router) {
 	// Customer routes
 	payment.Post("/", paymentHandler.CreatePayment)
 	payment.Get("/order/:orderID", paymentHandler.GetPaymentStatus)
+	payment.Post("/order/:orderID/reconcile", paymentHandler.ReconcilePayment)
 
 	// Admin routes
 	adminPayment := router.Group("/admin/payments", middleware.AuthMiddleware(), middleware.CheckAdminRole())

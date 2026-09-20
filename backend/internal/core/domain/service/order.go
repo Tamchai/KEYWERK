@@ -15,6 +15,7 @@ type OrderService interface {
 	CreateOrder(userID string, req dto.ReqCreateOrder) (*dto.ResOrderDetail, error)
 	GetUserOrders(userID string) ([]dto.ResOrder, error)
 	GetOrderDetail(orderID string, userID string, isAdmin bool) (*dto.ResOrderDetail, error)
+	CancelMyOrder(orderID string, userID string) error
 	UpdateOrderAddress(orderID string, userID string, req dto.ReqUpdateOrderAddress) error
 	GetAllOrdersForAdmin() ([]dto.ResOrder, error)
 	UpdateOrderStatus(orderID string, req dto.ReqUpdateOrderStatus) error
@@ -249,12 +250,12 @@ func (s *orderService) GetOrderDetail(orderID string, userID string, isAdmin boo
 	var resPayment *dto.ResPayment
 	if payment != nil {
 		resPayment = &dto.ResPayment{
-			PaymentID:     payment.ID,
-			OrderID:       payment.OrderID,
-			Amount:        payment.Amount,
-			Status:        payment.Status,
-			PaymentMethod: payment.PaymentMethod,
-			PaidAt:        payment.PaidAt,
+			PaymentID:               payment.ID,
+			OrderID:                 payment.OrderID,
+			Amount:                  payment.Amount,
+			Status:                  payment.Status,
+			PaymentMethod:           payment.PaymentMethod,
+			PaidAt:                  payment.PaidAt,
 			ProviderSessionID:       payment.ProviderSessionID,
 			ProviderPaymentIntentID: payment.ProviderPaymentIntentID,
 			CheckoutURL:             payment.CheckoutURL,
@@ -308,6 +309,41 @@ func (s *orderService) UpdateOrderAddress(orderID string, userID string, req dto
 		return errs.Internal("cannot update order address", err)
 	}
 
+	return nil
+}
+
+func (s *orderService) CancelMyOrder(orderID string, userID string) error {
+	if err := validateUUID(orderID, "order id"); err != nil {
+		return err
+	}
+	order, err := s.orderRepo.FindByID(orderID)
+	if err != nil {
+		return errs.NotFound("order not found", err)
+	}
+	if order.UserID != userID {
+		return errs.Forbidden("order cancellation denied", nil)
+	}
+	if order.Status != dto.OrderStatusPending {
+		return errs.Conflict("only pending orders can be cancelled", nil)
+	}
+	payment, err := s.paymentRepo.FindByOrderID(orderID)
+	if err != nil {
+		return errs.Internal("cannot check payment before cancellation", err)
+	}
+	if payment != nil {
+		if payment.Status == dto.PaymentStatusPaid {
+			return errs.Conflict("paid orders require a refund before cancellation", nil)
+		}
+		if payment.Status == dto.PaymentStatusPending {
+			return errs.Conflict("cannot cancel while Stripe payment is pending", nil)
+		}
+	}
+	if err := s.orderRepo.UpdateStatus(orderID, dto.OrderStatusPending, dto.OrderStatusCancelled); err != nil {
+		if errors.Is(err, port.ErrActiveStripeCheckout) {
+			return errs.Conflict("cannot cancel while Stripe Checkout is active", err)
+		}
+		return errs.Conflict("order status changed; refresh and try again", err)
+	}
 	return nil
 }
 

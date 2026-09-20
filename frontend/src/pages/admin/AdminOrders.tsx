@@ -59,13 +59,9 @@ export default function AdminOrders() {
   return (
     <AdminPageShell>
       <h1>คำสั่งซื้อ</h1>
-      <label>
-        กรองสถานะ{" "}
-        <select value={filter} onChange={(event) => setFilter(event.target.value as "all" | OrderStatus)}>
-          <option value="all">ทั้งหมด</option>
-          {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
-      </label>
+      <div className="flex gap-2" role="group" aria-label="กรองสถานะคำสั่งซื้อ">
+        {(["all", "pending", "processing", "shipped", "cancelled"] as const).map((status) => <button key={status} type="button" className="admin-filter-button" aria-pressed={filter === status} onClick={() => setFilter(status)}>{status === "all" ? "ทั้งหมด" : statusLabels[status]}</button>)}
+      </div>
       {error ? <p style={{ color: "#e85d5d" }}>{error.message}</p> : null}
       {ordersQuery.isLoading ? <p>กำลังโหลด...</p> : (
         <div ref={panelRef} className="admin-table-panel" style={{ marginTop: 20 }}>
@@ -77,7 +73,7 @@ export default function AdminOrders() {
                   <td style={tdStyle}><Link to={`/orders/${order.order_id}`}>#{order.order_id.slice(0, 8)}</Link></td>
                   <td style={tdStyle}>{order.receiver_name}</td>
                   <td style={tdStyle}>{formatPriceTHB(order.total_price)}</td>
-                  <td style={tdStyle}>{statusLabels[order.status]}</td>
+                  <td style={tdStyle}><span className="kw-status-badge" data-status={order.status}>{statusLabels[order.status]}</span></td>
                   <td style={tdStyle}>
                     {nextStatuses[order.status].map((status) => (
                       <button key={status} style={{ ...primaryBtn, marginRight: 8, marginBottom: 6 }} disabled={changeStatus.isPending} onClick={() => void handleStatus(order.order_id, status)}>

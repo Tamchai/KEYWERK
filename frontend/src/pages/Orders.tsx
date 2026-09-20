@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, CalendarDays, CircleAlert, Clock3, Package, PackageCheck, ShoppingBag, Truck, XCircle } from "lucide-react";
+import { ArrowUpRight, CircleAlert, Clock3, Package, PackageCheck, ShoppingBag, Truck, XCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { OrderStatus } from "../api/types";
 import AccountShell from "../components/account/AccountShell";
@@ -8,20 +8,20 @@ import { cn } from "../lib/utils";
 import { formatPriceTHB } from "../utils/format";
 
 const statusMeta = {
-  pending: { label: "รอดำเนินการ", detail: "รอการชำระเงินหรือยืนยันคำสั่งซื้อ", icon: Clock3, className: "border-amber-300/20 bg-amber-300/10 text-amber-200" },
-  processing: { label: "กำลังจัดเตรียม", detail: "ร้านค้ากำลังจัดเตรียมสินค้าของคุณ", icon: Package, className: "border-sky-300/20 bg-sky-300/10 text-sky-200" },
-  shipped: { label: "จัดส่งแล้ว", detail: "สินค้าออกเดินทางไปหาคุณแล้ว", icon: Truck, className: "border-emerald-300/20 bg-emerald-300/10 text-emerald-200" },
-  cancelled: { label: "ยกเลิก", detail: "คำสั่งซื้อนี้ถูกยกเลิก", icon: XCircle, className: "border-red-300/20 bg-red-300/10 text-red-200" },
-} satisfies Record<OrderStatus, { label: string; detail: string; icon: typeof Clock3; className: string }>;
+  pending: { label: "รอชำระเงิน", detail: "รอการชำระเงินผ่าน Stripe", icon: Clock3 },
+  processing: { label: "กำลังเตรียมสินค้า", detail: "ร้านค้ากำลังจัดเตรียมสินค้า", icon: Package },
+  shipped: { label: "จัดส่งแล้ว", detail: "สินค้าอยู่ระหว่างการจัดส่ง", icon: Truck },
+  cancelled: { label: "ยกเลิกแล้ว", detail: "คำสั่งซื้อนี้ถูกยกเลิก", icon: XCircle },
+} satisfies Record<OrderStatus, { label: string; detail: string; icon: typeof Clock3 }>;
 
 const filters: Array<{ value: "all" | OrderStatus; label: string }> = [
-  { value: "all", label: "ทั้งหมด" }, { value: "pending", label: "รอดำเนินการ" },
-  { value: "processing", label: "กำลังจัดเตรียม" }, { value: "shipped", label: "จัดส่งแล้ว" },
+  { value: "all", label: "ทั้งหมด" }, { value: "pending", label: "รอชำระเงิน" },
+  { value: "processing", label: "กำลังเตรียม" }, { value: "shipped", label: "จัดส่งแล้ว" },
   { value: "cancelled", label: "ยกเลิก" },
 ];
 
 const formatDate = (value: string) => new Intl.DateTimeFormat("th-TH", {
-  day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+  day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
 }).format(new Date(value));
 
 export default function Orders() {
@@ -30,43 +30,44 @@ export default function Orders() {
   const allOrders = ordersQuery.data ?? [];
   const orders = allOrders.filter((order) => filter === "all" || order.status === filter);
   const activeCount = allOrders.filter((order) => order.status === "pending" || order.status === "processing").length;
+  const shippedCount = allOrders.filter((order) => order.status === "shipped").length;
 
-  return (
-    <AccountShell title="คำสั่งซื้อของฉัน">
-      <section className="mb-6 grid grid-cols-3 gap-4">
-        <Summary icon={ShoppingBag} label="คำสั่งซื้อทั้งหมด" value={allOrders.length} tone="accent" />
-        <Summary icon={Package} label="กำลังดำเนินการ" value={activeCount} tone="blue" />
-        <Summary icon={PackageCheck} label="จัดส่งแล้ว" value={allOrders.filter((order) => order.status === "shipped").length} tone="green" />
-      </section>
+  return <AccountShell title="คำสั่งซื้อของฉัน">
+    <div className="mb-7 grid grid-cols-3 gap-4">
+      <Summary icon={ShoppingBag} label="คำสั่งซื้อทั้งหมด" value={allOrders.length} note="รายการที่เคยสั่งซื้อ" />
+      <Summary icon={Clock3} label="กำลังดำเนินการ" value={activeCount} note="รอชำระเงินหรือเตรียมสินค้า" />
+      <Summary icon={PackageCheck} label="จัดส่งแล้ว" value={shippedCount} note="สินค้าออกจากร้านแล้ว" />
+    </div>
 
-      <div className="mb-5 flex items-center justify-between rounded-2xl border border-[var(--line)] bg-black/15 p-2">
-        <div className="flex items-center gap-1" role="group" aria-label="กรองสถานะคำสั่งซื้อ">
-          {filters.map((item) => <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={cn("border-0 px-4 py-2 text-sm font-semibold text-[var(--text-dim)] transition-colors", filter === item.value && "bg-[var(--accent)] text-[#18140a] shadow-lg shadow-black/20")}>{item.label}{item.value !== "all" ? <span className="ml-2 opacity-65">{allOrders.filter((order) => order.status === item.value).length}</span> : null}</button>)}
-        </div>
-        <span className="pr-3 text-xs text-[var(--text-dim)]">แสดง {orders.length} รายการ</span>
+    <div className="mb-5 flex items-center justify-between gap-6 border-b border-[var(--line)] pb-4">
+      <div className="flex items-center gap-2" role="group" aria-label="กรองสถานะคำสั่งซื้อ">
+        {filters.map((item) => <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={cn("!rounded-xl !border-transparent !bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--text-dim)]", filter === item.value && "!border-[var(--line-bright)] !bg-[var(--accent-soft)] !text-[var(--accent)]")}>
+          {item.label}<span className="ml-2 opacity-70">{item.value === "all" ? allOrders.length : allOrders.filter((order) => order.status === item.value).length}</span>
+        </button>)}
       </div>
+      <span className="text-sm text-[var(--text-dim)]">แสดง {orders.length.toLocaleString("th-TH")} รายการ</span>
+    </div>
 
-      {ordersQuery.isLoading ? <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-10 text-center text-[var(--text-dim)]"><Clock3 className="mx-auto mb-3 animate-pulse text-[var(--accent)]" />กำลังโหลดคำสั่งซื้อ...</div> : null}
-      {ordersQuery.isError ? <div className="flex items-center gap-3 rounded-2xl border border-red-400/20 bg-red-400/5 p-5 text-red-300"><CircleAlert size={20} />{ordersQuery.error.message}</div> : null}
-      {!ordersQuery.isLoading && !ordersQuery.isError && !orders.length ? <div className="rounded-3xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-8 py-16 text-center"><ShoppingBag className="mx-auto mb-4 text-[var(--accent)]" size={34} /><h2 className="text-xl">ยังไม่มีคำสั่งซื้อในสถานะนี้</h2><p className="mt-2 text-sm text-[var(--text-dim)]">เมื่อมีรายการ คำสั่งซื้อของคุณจะแสดงอยู่ที่นี่</p><Link className="mt-6 inline-flex rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-bold text-[#18140a] no-underline" to="/products">เลือกดูสินค้า</Link></div> : null}
+    {ordersQuery.isLoading ? <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-12 text-center text-base text-[var(--text-dim)]"><Clock3 className="mx-auto mb-3 animate-pulse text-[var(--accent)]" />กำลังโหลดคำสั่งซื้อ...</div> : null}
+    {ordersQuery.isError ? <div role="alert" className="flex items-center gap-3 rounded-2xl border border-[var(--status-stop-line)] bg-[var(--status-stop-bg)] p-6 text-base text-[var(--status-stop-text)]"><CircleAlert size={20} />{ordersQuery.error.message}</div> : null}
+    {!ordersQuery.isLoading && !ordersQuery.isError && !orders.length ? <div className="rounded-3xl border border-dashed border-[var(--line)] bg-[var(--surface)] px-8 py-16 text-center"><ShoppingBag className="mx-auto mb-4 text-[var(--accent)]" size={38} /><h2 className="text-2xl">ยังไม่มีคำสั่งซื้อในสถานะนี้</h2><p className="mt-3 text-base text-[var(--text-dim)]">เมื่อมีรายการ คำสั่งซื้อของคุณจะแสดงอยู่ที่นี่</p><Link className="mt-6 inline-flex rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-bold text-[var(--on-accent)] no-underline" to="/products">เลือกดูสินค้า</Link></div> : null}
 
-      <div className="grid gap-3">
-        {orders.map((order) => {
-          const meta = statusMeta[order.status];
-          const StatusIcon = meta.icon;
-          return <Link key={order.order_id} to={`/orders/${order.order_id}`} className="group grid grid-cols-[minmax(0,1fr)_220px_180px_36px] items-center gap-6 rounded-2xl border border-[var(--line)] bg-gradient-to-r from-[var(--surface)] to-[var(--surface-top)] p-5 no-underline shadow-lg shadow-black/10 transition hover:-translate-y-0.5 hover:border-[var(--line-bright)] hover:shadow-xl hover:shadow-black/20">
-            <div className="min-w-0"><div className="mb-2 flex items-center gap-2"><span className="text-xs font-bold tracking-[.12em] text-[var(--accent)]">ORDER</span><strong className="font-mono text-base">#{order.order_id.slice(0, 8).toUpperCase()}</strong></div><p className="flex items-center gap-2 truncate text-sm text-[var(--text-dim)]"><CalendarDays size={15} /> {formatDate(order.created_at)} · {order.receiver_name}</p></div>
-            <div><span className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold", meta.className)}><StatusIcon size={14} />{meta.label}</span><p className="mt-2 text-xs text-[var(--text-dim)]">{meta.detail}</p></div>
-            <div className="text-right"><p className="text-xs text-[var(--text-dim)]">ยอดรวม</p><strong className="mt-1 block text-xl text-[var(--accent)]">{formatPriceTHB(order.total_price)}</strong></div>
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-white/5 text-[var(--text-dim)] transition group-hover:bg-[var(--accent)] group-hover:text-[#18140a]"><ArrowRight size={18} /></span>
-          </Link>;
-        })}
-      </div>
-    </AccountShell>
-  );
+    <div className="grid gap-4">
+      {orders.map((order, index) => {
+        const meta = statusMeta[order.status];
+        const Icon = meta.icon;
+        return <Link key={order.order_id} to={`/orders/${order.order_id}`} className="group relative grid grid-cols-[60px_minmax(0,1fr)_200px_160px_42px] items-center gap-5 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 no-underline transition hover:border-[var(--line-bright)] hover:bg-[var(--surface-top)]">
+          <span className="kw-order-index">{String(index + 1).padStart(2, "0")}</span>
+          <div className="min-w-0"><p className="mb-1 text-sm font-semibold text-[var(--text-dim)]">คำสั่งซื้อ <span className="ml-2 font-mono text-[var(--accent)]">#{order.order_id.slice(0, 8).toUpperCase()}</span></p><h2 className="truncate text-lg font-bold text-[var(--text)]">{order.receiver_name || "คำสั่งซื้อของคุณ"}</h2><p className="mt-1 text-sm text-[var(--text-dim)]">{formatDate(order.created_at)}</p></div>
+          <div><span className="kw-status-badge" data-status={order.status}><Icon size={16} />{meta.label}</span><p className="mt-2 text-sm text-[var(--text-dim)]">{meta.detail}</p></div>
+          <div className="text-right"><p className="text-sm text-[var(--text-dim)]">ยอดรวม</p><strong className="mt-1 block text-xl tabular-nums text-[var(--accent)]">{formatPriceTHB(order.total_price)}</strong></div>
+          <span className="grid h-10 w-10 place-items-center rounded-full border border-[var(--line)] text-[var(--text-dim)] transition group-hover:border-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-[var(--on-accent)]"><ArrowUpRight size={19} /></span>
+        </Link>;
+      })}
+    </div>
+  </AccountShell>;
 }
 
-function Summary({ icon: Icon, label, value, tone }: { icon: typeof ShoppingBag; label: string; value: number; tone: "accent" | "blue" | "green" }) {
-  const tones = { accent: "bg-[var(--accent-soft)] text-[var(--accent)]", blue: "bg-sky-300/10 text-sky-200", green: "bg-emerald-300/10 text-emerald-200" };
-  return <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-lg shadow-black/10"><div className={cn("mb-4 flex h-10 w-10 items-center justify-center rounded-xl", tones[tone])}><Icon size={20} /></div><p className="text-xs font-semibold tracking-widest text-[var(--text-dim)]">{label}</p><strong className="mt-1 block text-3xl">{value}</strong></div>;
+function Summary({ icon: Icon, label, value, note }: { icon: typeof ShoppingBag; label: string; value: number; note: string }) {
+  return <div className="relative overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-5"><div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-[var(--accent)] to-transparent" /><div className="mb-4 flex items-center justify-between"><span className="text-base font-semibold text-[var(--text-dim)]">{label}</span><Icon size={20} className="text-[var(--accent)]" /></div><strong className="block text-4xl font-bold tabular-nums text-[var(--text)]">{value.toLocaleString("th-TH")}</strong><p className="mt-2 text-sm text-[var(--text-dim)]">{note}</p></div>;
 }

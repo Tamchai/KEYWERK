@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, memo } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import { useCartStore } from "../../stores/cartStore";
+import ThemeToggle from "../ui/ThemeToggle";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -594,6 +595,7 @@ export const Navbar = memo(() => {
           </div>
 
           <div className="keywerk-nav-actions" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+            <ThemeToggle compact />
             {isAdmin && (
               <Link
                 to="/admin"

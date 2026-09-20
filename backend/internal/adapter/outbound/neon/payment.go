@@ -22,7 +22,8 @@ func NewNeonPaymentRepository(db *sqlx.DB) port.PaymentRepository {
 func (r *neonPaymentRepository) Create(p dto.Payment) error {
 	query := `
 	INSERT INTO payments (payment_id, order_id, amount, status, payment_method, paid_at)
-	VALUES ($1, $2, $3, $4, $5, $6)
+	SELECT $1, $2, $3, $4, $5, $6
+	FROM orders WHERE order_id = $2 AND status = 'pending' FOR UPDATE
 	`
 	result, err := r.db.Exec(query, p.ID, p.OrderID, p.Amount, p.Status, p.PaymentMethod, p.PaidAt)
 	if err != nil {
@@ -47,7 +48,12 @@ func (r *neonPaymentRepository) Retry(paymentID string, amount float64) (bool, e
 		SET payment_method = 'stripe', amount = $1, status = 'pending', paid_at = NULL,
 			provider_session_id = NULL, provider_payment_intent_id = NULL, checkout_url = NULL,
 			checkout_attempt = checkout_attempt + 1, created_at = CURRENT_TIMESTAMP
-		WHERE payment_id = $2 AND status = 'failed'`, amount, paymentID)
+		WHERE payment_id = $2 AND status = 'failed'
+		  AND EXISTS (
+			SELECT 1 FROM orders
+			WHERE orders.order_id = payments.order_id AND orders.status = 'pending'
+			FOR UPDATE
+		  )`, amount, paymentID)
 	if err != nil {
 		return false, err
 	}

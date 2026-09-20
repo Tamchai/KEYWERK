@@ -11,6 +11,7 @@ type OrderHandler interface {
 	CreateOrder(c *fiber.Ctx) error
 	GetMyOrders(c *fiber.Ctx) error
 	GetOrderDetail(c *fiber.Ctx) error
+	CancelMyOrder(c *fiber.Ctx) error
 	UpdateOrderAddress(c *fiber.Ctx) error
 	AdminGetAllOrders(c *fiber.Ctx) error
 	AdminUpdateOrderStatus(c *fiber.Ctx) error
@@ -87,6 +88,17 @@ func (h *orderHandler) GetOrderDetail(c *fiber.Ctx) error {
 		"message": "order details retrieved successfully",
 		"data":    order,
 	})
+}
+
+func (h *orderHandler) CancelMyOrder(c *fiber.Ctx) error {
+	userID, err := GetUserIDFromCtx(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
+	}
+	if err := h.orderService.CancelMyOrder(c.Params("orderID"), userID); err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{"message": "order cancelled successfully"})
 }
 
 func (h *orderHandler) UpdateOrderAddress(c *fiber.Ctx) error {

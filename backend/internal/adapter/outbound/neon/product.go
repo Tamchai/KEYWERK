@@ -13,6 +13,17 @@ type neonProductRepository struct {
 	db *sqlx.DB
 }
 
+// Count only paid, non-cancelled order items, including historical orders whose
+// cached products.total_sold value was never updated.
+const paidProductSalesSQL = `COALESCE((
+	SELECT SUM(oi.quantity)
+	FROM productvariants pv
+	JOIN ordersitems oi ON oi.variant_id = pv.variant_id
+	JOIN orders o ON o.order_id = oi.order_id
+	JOIN payments pay ON pay.order_id = o.order_id AND pay.status = 'paid'
+	WHERE pv.product_id = products.product_id AND o.status <> 'cancelled'
+), 0)`
+
 func NewNeonProductRepository(db *sqlx.DB) port.ProductRepository {
 	return &neonProductRepository{db: db}
 }
@@ -80,7 +91,7 @@ func (r *neonProductRepository) GetAll(filter dto.ProductFilterQuery) ([]dto.Pro
 		COALESCE(brand_id::text, ''),
 		name,
 		COALESCE(description, ''),
-		COALESCE(total_sold, 0),
+		` + paidProductSalesSQL + `,
 		created_at,
 		updated_at
 	FROM products
@@ -147,7 +158,7 @@ func (r *neonProductRepository) Get(productID string) (*dto.Product, error) {
 		COALESCE(brand_id::text, ''),
 		name,
 		COALESCE(description, ''),
-		COALESCE(total_sold, 0),
+		` + paidProductSalesSQL + `,
 		created_at,
 		updated_at
 	FROM products WHERE product_id = $1;

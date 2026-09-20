@@ -56,6 +56,21 @@ func (g *paymentGateway) CreateCheckoutSession(ctx context.Context, req gateway.
 	return &gateway.CheckoutSession{ID: created.ID, URL: created.URL}, nil
 }
 
+func (g *paymentGateway) GetCheckoutSession(ctx context.Context, sessionID string) (*gateway.CheckoutSessionStatus, error) {
+	session, err := g.client.V1CheckoutSessions.Retrieve(ctx, sessionID, nil)
+	if err != nil {
+		return nil, err
+	}
+	paymentIntentID := ""
+	if session.PaymentIntent != nil {
+		paymentIntentID = session.PaymentIntent.ID
+	}
+	return &gateway.CheckoutSessionStatus{
+		ID: session.ID, PaymentID: session.Metadata["payment_id"], OrderID: session.Metadata["order_id"],
+		PaymentStatus: string(session.PaymentStatus), SessionStatus: string(session.Status), PaymentIntentID: paymentIntentID,
+	}, nil
+}
+
 func (g *paymentGateway) ParseWebhook(payload []byte, signature string) (*gateway.WebhookEvent, error) {
 	// Stripe accounts and webhook endpoints can be upgraded independently of
 	// stripe-go. We only decode stable Checkout Session fields below, so accept

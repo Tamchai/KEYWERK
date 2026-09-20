@@ -68,6 +68,7 @@ export interface DisplayProduct {
   brand?: string;
   name: string;
   price: string;
+  totalSold: number;
   href: string;
 }
 

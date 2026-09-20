@@ -4,6 +4,7 @@ import type { CreateOrderPayload, DataResponse, MessageResponse, Order, OrderDet
 export const listOrders = () => apiFetch<DataResponse<Order[]>>("/orders").then((r) => r.data);
 export const getOrder = (id: string) => apiFetch<DataResponse<OrderDetail>>(`/orders/${id}`).then((r) => r.data);
 export const createOrder = (body: CreateOrderPayload) => apiFetch<DataResponse<OrderDetail>>("/orders", { method: "POST", body: JSON.stringify(body) }).then((r) => r.data);
+export const cancelOrder = (id: string) => apiFetch<MessageResponse>(`/orders/${id}/cancel`, { method: "POST" });
 export const updateOrderAddress = (id: string, body: Omit<CreateOrderPayload, "address_id" | "shipping_method" | "items">) => apiFetch<MessageResponse>(`/orders/${id}/address`, { method: "PUT", body: JSON.stringify(body) });
 export const listAdminOrders = () => apiFetch<DataResponse<Order[]>>("/admin/orders").then((r) => r.data);
 export const updateOrderStatus = (id: string, status: OrderStatus) => apiFetch<MessageResponse>(`/admin/orders/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) });

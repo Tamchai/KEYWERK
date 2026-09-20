@@ -33,6 +33,7 @@ func SetupOrderRoutes(router fiber.Router) {
 	order.Post("/", orderHandler.CreateOrder)
 	order.Get("/", orderHandler.GetMyOrders)
 	order.Get("/:orderID", orderHandler.GetOrderDetail)
+	order.Post("/:orderID/cancel", orderHandler.CancelMyOrder)
 	order.Put("/:orderID/address", orderHandler.UpdateOrderAddress)
 
 	// Admin routes

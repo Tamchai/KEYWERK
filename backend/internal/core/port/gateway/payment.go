@@ -18,6 +18,15 @@ type CheckoutSession struct {
 	URL string
 }
 
+type CheckoutSessionStatus struct {
+	ID              string
+	PaymentID       string
+	OrderID         string
+	PaymentStatus   string
+	SessionStatus   string
+	PaymentIntentID string
+}
+
 type WebhookEvent struct {
 	ID              string
 	Type            string
@@ -30,5 +39,6 @@ type WebhookEvent struct {
 
 type PaymentGateway interface {
 	CreateCheckoutSession(ctx context.Context, req CheckoutRequest) (*CheckoutSession, error)
+	GetCheckoutSession(ctx context.Context, sessionID string) (*CheckoutSessionStatus, error)
 	ParseWebhook(payload []byte, signature string) (*WebhookEvent, error)
 }

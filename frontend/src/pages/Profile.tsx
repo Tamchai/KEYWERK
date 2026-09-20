@@ -76,13 +76,13 @@ function Profile() {
           {profileQuery.isLoading ? (
             <div className="flex min-h-80 items-center justify-center gap-3 text-[var(--text-dim)]"><LoaderCircle className="animate-spin" size={22} /> กำลังโหลดโปรไฟล์...</div>
           ) : profileQuery.isError ? (
-            <div className="rounded-2xl border border-red-400/20 bg-red-400/5 p-5 text-sm text-red-300">{profileQuery.error.message}</div>
+            <div className="rounded-2xl border border-[var(--status-stop-line)] bg-[var(--status-stop-bg)] p-5 text-sm text-[var(--status-stop-text)]">{profileQuery.error.message}</div>
           ) : <>
             <div className="kw-profile-identity">
               <div className="group relative shrink-0">
                 <button className="kw-profile-avatar overflow-hidden" type="button" onClick={() => fileInputRef.current?.click()} aria-label="เปลี่ยนรูปโปรไฟล์">
                   {avatarUrl ? <img className="h-full w-full object-cover" src={avatarUrl} alt="รูปโปรไฟล์" /> : initial}
-                  <span className="absolute inset-0 grid place-items-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"><Camera size={24} /></span>
+                  <span className="absolute inset-0 grid place-items-center bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"><Camera size={24} /></span>
                 </button>
                 <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface)] bg-[var(--accent)] text-[#171208]"><Camera size={14} /></span>
                 <input ref={fileInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { handleImage(event.target.files?.[0]); event.target.value = ""; }} />
@@ -90,7 +90,7 @@ function Profile() {
               <div className="min-w-0 flex-1">
                 <span className="kw-profile-status"><ShieldCheck size={15} /> บัญชีที่ยืนยันแล้ว</span>
                 {editingName ? <form className="flex max-w-md items-center gap-2" onSubmit={handleNameSubmit}>
-                  <input autoFocus maxLength={120} className="min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-black/20 px-3 py-2 text-base outline-none focus:border-[var(--accent)]" value={name} onChange={(event) => setName(event.target.value)} />
+                  <input autoFocus maxLength={120} className="min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-base outline-none focus:border-[var(--accent)]" value={name} onChange={(event) => setName(event.target.value)} />
                   <Button className="h-10 w-10 p-0" type="submit" disabled={saveProfile.isPending} aria-label="บันทึกชื่อ"><Check size={18} /></Button>
                 </form> : <div className="flex items-center gap-2"><h2>{profile?.name || "สมาชิก KEYWERK"}</h2><button className="border-0 bg-transparent p-1 text-[var(--text-dim)] hover:text-[var(--accent)]" type="button" onClick={() => setEditingName(true)} aria-label="แก้ไขชื่อ"><Pencil size={16} /></button></div>}
                 <p className="truncate">{displayEmail}</p>
@@ -101,7 +101,7 @@ function Profile() {
               <button className="inline-flex items-center gap-1.5 border-0 bg-transparent px-2 py-1.5 hover:text-[var(--accent)]" type="button" disabled={saveProfileImage.isPending} onClick={() => fileInputRef.current?.click()}>
                 {saveProfileImage.isPending ? <LoaderCircle className="animate-spin" size={14} /> : <Camera size={14} />} {avatarUrl ? "เปลี่ยนรูป" : "เพิ่มรูปโปรไฟล์"}
               </button>
-              {avatarUrl ? <button className="inline-flex items-center gap-1.5 border-0 bg-transparent px-2 py-1.5 hover:text-red-300" type="button" onClick={() => void handleRemoveImage()}><Trash2 size={14} /> นำรูปออก</button> : null}
+              {avatarUrl ? <button className="inline-flex items-center gap-1.5 border-0 bg-transparent px-2 py-1.5 hover:text-[var(--danger)]" type="button" onClick={() => void handleRemoveImage()}><Trash2 size={14} /> นำรูปออก</button> : null}
               <span>JPEG, PNG หรือ WebP · สูงสุด 5 MB</span>
             </div>
 

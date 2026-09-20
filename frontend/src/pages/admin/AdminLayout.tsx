@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { ArrowLeft, Boxes, CreditCard, LayoutDashboard, LogOut, Package, ShoppingBag, Tags } from "lucide-react";
 import { useAuthStore } from "../../stores/authStore";
+import ThemeToggle from "../../components/ui/ThemeToggle";
 
 const links = [
   { to: "/admin", label: "ภาพรวม", icon: LayoutDashboard, end: true },
@@ -41,6 +42,7 @@ export const AdminLayout = () => {
           ))}
         </nav>
         <div className="admin-sidebar-footer">
+          <ThemeToggle />
           <button type="button" onClick={() => navigate("/profile")} className="admin-back"><ArrowLeft size={17} /> กลับไปหน้าบัญชี</button>
           <button type="button" onClick={handleLogout} className="admin-logout"><LogOut size={17} /> ออกจากระบบ</button>
         </div>

@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { useAuthStore } from "../stores/authStore";
+import { resolveLoginDestination } from "../utils/loginRedirect";
 
 function Login() {
   const login = useAuthStore((state) => state.login);
@@ -19,8 +20,7 @@ function Login() {
     setSubmitting(true);
     try {
       await login(email.trim(), password);
-      const fallback = useAuthStore.getState().isAdmin ? "/admin" : "/profile";
-      navigate(requestedPath || fallback, { replace: true });
+      navigate(resolveLoginDestination(requestedPath, useAuthStore.getState().isAdmin), { replace: true });
     } catch (caught) {
       setError(caught instanceof ApiError && caught.status === 401
         ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง"

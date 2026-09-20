@@ -14,6 +14,7 @@ type PaymentHandler interface {
 	CreatePayment(c *fiber.Ctx) error
 	StripeWebhook(c *fiber.Ctx) error
 	GetPaymentStatus(c *fiber.Ctx) error
+	ReconcilePayment(c *fiber.Ctx) error
 	AdminGetAllPayments(c *fiber.Ctx) error
 	AdminVerifyPayment(c *fiber.Ctx) error
 }
@@ -88,6 +89,20 @@ func (h *paymentHandler) GetPaymentStatus(c *fiber.Ctx) error {
 		"message": "payment status retrieved successfully",
 		"data":    res,
 	})
+}
+
+func (h *paymentHandler) ReconcilePayment(c *fiber.Ctx) error {
+	userID, err := GetUserIDFromCtx(c)
+	if err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "unauthorized"})
+	}
+	ctx, cancel := context.WithTimeout(c.Context(), 10*time.Second)
+	defer cancel()
+	res, err := h.paymentService.ReconcilePayment(ctx, c.Params("orderID"), userID, IsAdminFromCtx(c))
+	if err != nil {
+		return err
+	}
+	return c.JSON(fiber.Map{"message": "payment status checked successfully", "data": res})
 }
 
 func (h *paymentHandler) AdminGetAllPayments(c *fiber.Ctx) error {

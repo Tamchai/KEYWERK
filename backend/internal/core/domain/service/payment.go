@@ -16,6 +16,7 @@ type PaymentService interface {
 	CreatePayment(ctx context.Context, userID string, req dto.ReqCreatePayment) (*dto.ResPayment, error)
 	HandleStripeWebhook(payload []byte, signature string) error
 	GetPaymentByOrderID(orderID string, userID string, isAdmin bool) (*dto.ResPayment, error)
+	ReconcilePayment(ctx context.Context, orderID string, userID string, isAdmin bool) (*dto.ResPayment, error)
 	GetAllPaymentsForAdmin() ([]dto.ResPayment, error)
 	VerifyPayment(paymentID string, req dto.ReqVerifyPayment) error
 }
@@ -45,8 +46,8 @@ func (s *paymentService) CreatePayment(ctx context.Context, userID string, req d
 	if order.UserID != userID {
 		return nil, errs.Forbidden("order payment denied", nil)
 	}
-	if order.Status == dto.OrderStatusCancelled {
-		return nil, errs.BadRequest("cannot pay for cancelled order", nil)
+	if order.Status != dto.OrderStatusPending {
+		return nil, errs.BadRequest("only pending orders can be paid", nil)
 	}
 
 	payment, err := s.paymentRepo.FindByOrderID(req.OrderID)
@@ -161,6 +162,38 @@ func (s *paymentService) GetPaymentByOrderID(orderID string, userID string, isAd
 		return nil, errs.NotFound("payment not found for this order", err)
 	}
 	return paymentResponse(payment), nil
+}
+
+// ReconcilePayment is an authenticated fallback for a missing or delayed
+// webhook. Stripe remains the source of truth; the browser never marks paid.
+func (s *paymentService) ReconcilePayment(ctx context.Context, orderID string, userID string, isAdmin bool) (*dto.ResPayment, error) {
+	current, err := s.GetPaymentByOrderID(orderID, userID, isAdmin)
+	if err != nil || current.Status != dto.PaymentStatusPending || current.ProviderSessionID == "" || s.gateway == nil {
+		return current, err
+	}
+
+	session, err := s.gateway.GetCheckoutSession(ctx, current.ProviderSessionID)
+	if err != nil {
+		return nil, errs.Unavailable("cannot check Stripe Checkout status", err)
+	}
+	if session.ID != current.ProviderSessionID || session.PaymentID != current.PaymentID || session.OrderID != orderID {
+		return nil, errs.BadRequest("Stripe Checkout Session does not match payment", nil)
+	}
+
+	var status dto.PaymentStatus
+	switch {
+	case session.PaymentStatus == "paid":
+		status = dto.PaymentStatusPaid
+	case session.SessionStatus == "expired":
+		status = dto.PaymentStatusFailed
+	default:
+		return current, nil
+	}
+
+	if err := s.paymentRepo.ProcessStripeEvent("reconcile:"+session.ID+":"+string(status), "checkout.session.reconciled", current.PaymentID, orderID, session.ID, session.PaymentIntentID, status); err != nil {
+		return nil, errs.Internal("cannot reconcile Stripe payment", err)
+	}
+	return s.GetPaymentByOrderID(orderID, userID, isAdmin)
 }
 
 func (s *paymentService) GetAllPaymentsForAdmin() ([]dto.ResPayment, error) {

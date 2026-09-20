@@ -184,11 +184,11 @@ Expiry:      วันที่ในอนาคต
 CVC:         เลข 3 หลักใดก็ได้
 ```
 
-สถานะการชำระเงินอ้างอิง signed webhook จาก Stripe หน้า success จะไม่เปลี่ยน payment เป็น `paid` ด้วยตัวเอง
+สถานะการชำระเงินอ้างอิง signed webhook จาก Stripe เป็นหลัก หาก webhook ล่าช้าหรือเครื่องทดสอบไม่ได้เปิด Stripe CLI หน้า success/รายละเอียดคำสั่งซื้อจะให้ backend ตรวจ Checkout Session กับ Stripe โดยตรงอีกครั้ง ระบบจะเปลี่ยนเป็น `paid` เฉพาะเมื่อ Stripe ตอบว่า `payment_status=paid` และ session/metadata ตรงกับออเดอร์เท่านั้น การตรวจสำรองนี้ไม่ทดแทน webhook สำหรับออเดอร์ที่ลูกค้าไม่กลับเข้าเว็บ
 
 ## API Documentation
 
-สเปก API ปัจจุบันอยู่ที่ [`backend/openapi.yaml`](backend/openapi.yaml) ครอบคลุม 30 paths และ 49 operations
+สเปก API ปัจจุบันอยู่ที่ [`backend/openapi.yaml`](backend/openapi.yaml) ครอบคลุม 31 paths และ 50 operations
 
 Base URL สำหรับ local development:
 

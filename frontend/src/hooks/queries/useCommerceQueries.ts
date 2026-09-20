@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createAddress, deleteAddress, listAddresses, updateAddress } from "../../api/address";
-import { createOrder, getOrder, listAdminOrders, listOrders, updateOrderAddress, updateOrderStatus, updateTracking } from "../../api/order";
-import { createPayment, listAdminPayments, verifyPayment } from "../../api/payment";
+import { cancelOrder, createOrder, getOrder, listAdminOrders, listOrders, updateOrderAddress, updateOrderStatus, updateTracking } from "../../api/order";
+import { createPayment, listAdminPayments, reconcilePayment, verifyPayment } from "../../api/payment";
 import { getProfile, updateProfile, uploadProfileImage } from "../../api/profile";
 import type { AddressPayload, CreateOrderPayload, OrderStatus } from "../../api/types";
 
@@ -61,15 +61,31 @@ export function useOrderQuery(orderId: string, pollPayment = false) {
       queryKey: commerceKeys.order(orderId),
       queryFn: () => getOrder(orderId),
       enabled: Boolean(orderId),
-      refetchInterval: (query) => pollPayment && (!query.state.data?.payment || query.state.data.payment.status === "pending") ? 2000 : false,
+      refetchInterval: (query) => pollPayment && query.state.data?.status === "pending" && query.state.data.payment?.status === "pending" ? 2000 : false,
     }),
     submitPayment: useMutation({
       mutationFn: () => createPayment(orderId),
       onSuccess: invalidate,
     }),
+    reconcilePayment: useMutation({
+      mutationFn: () => reconcilePayment(orderId),
+      onSuccess: () => {
+        invalidate();
+        queryClient.invalidateQueries({ queryKey: commerceKeys.orders });
+        queryClient.invalidateQueries({ queryKey: commerceKeys.adminPayments });
+      },
+    }),
     updateAddress: useMutation({
       mutationFn: (payload: AddressPayload) => updateOrderAddress(orderId, payload),
       onSuccess: invalidate,
+    }),
+    cancelOrder: useMutation({
+      mutationFn: () => cancelOrder(orderId),
+      onSuccess: () => {
+        invalidate();
+        queryClient.invalidateQueries({ queryKey: commerceKeys.orders });
+        queryClient.invalidateQueries({ queryKey: commerceKeys.adminOrders });
+      },
     }),
   };
 }
@@ -104,7 +120,11 @@ export function useAdminPaymentsQuery() {
   };
 
   return {
-    paymentsQuery: useQuery({ queryKey: commerceKeys.adminPayments, queryFn: listAdminPayments }),
+    paymentsQuery: useQuery({
+      queryKey: commerceKeys.adminPayments,
+      queryFn: listAdminPayments,
+      refetchInterval: (query) => query.state.data?.some((payment) => payment.status === "pending") ? 5000 : false,
+    }),
     verifyPayment: useMutation({
       mutationFn: ({ id, status }: { id: string; status: "paid" | "failed" }) => verifyPayment(id, status),
       onSuccess: invalidate,

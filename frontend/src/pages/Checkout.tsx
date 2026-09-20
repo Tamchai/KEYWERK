@@ -108,17 +108,17 @@ export default function Checkout() {
 
         <section style={{ ...panel, marginBottom: 16 }}>
           <h2>2. ที่อยู่จัดส่ง</h2>
-          <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
-            <label><input type="radio" checked={addressMode === "saved"} onChange={() => setAddressMode("saved")} /> ใช้ที่อยู่ที่บันทึกไว้</label>
-            <label><input type="radio" checked={addressMode === "new"} onChange={() => setAddressMode("new")} /> กรอกที่อยู่ใหม่</label>
+          <div className="kw-choice-row" role="group" aria-label="เลือกวิธีระบุที่อยู่">
+            <button type="button" className="kw-choice-button" aria-pressed={addressMode === "saved"} onClick={() => setAddressMode("saved")}>ใช้ที่อยู่ที่บันทึกไว้</button>
+            <button type="button" className="kw-choice-button" aria-pressed={addressMode === "new"} onClick={() => setAddressMode("new")}>กรอกที่อยู่ใหม่</button>
           </div>
           {addressMode === "saved" ? (
             addressesQuery.isLoading ? <p>กำลังโหลดที่อยู่...</p> : addressesQuery.data?.length ? (
-              <select aria-label="ที่อยู่จัดส่ง" style={{ width: "100%", padding: 12, background: "var(--bg)", color: "var(--text)" }} value={selectedAddressId} onChange={(event) => setAddressId(event.target.value)}>
+              <div className="kw-choice-list" role="group" aria-label="เลือกที่อยู่จัดส่ง">
                 {addressesQuery.data.map((address) => (
-                  <option key={address.address_id} value={address.address_id}>{address.receiver_name} — {address.address_line1}, {address.province}</option>
+                  <button key={address.address_id} type="button" className="kw-choice-card" aria-pressed={selectedAddressId === address.address_id} onClick={() => setAddressId(address.address_id)}><strong>{address.title || address.receiver_name}</strong><span>{address.receiver_name} · {address.address_line1}, {address.province}</span></button>
                 ))}
-              </select>
+              </div>
             ) : <p>ยังไม่มีที่อยู่ที่บันทึกไว้ กรุณา <Link to="/addresses">เพิ่มที่อยู่</Link> หรือเลือก “กรอกที่อยู่ใหม่”</p>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10 }}>
@@ -132,10 +132,9 @@ export default function Checkout() {
 
         <section style={{ ...panel, marginBottom: 16 }}>
           <h2>3. วิธีจัดส่ง</h2>
-          <select aria-label="วิธีจัดส่ง" style={{ width: "100%", padding: 12, background: "var(--bg)", color: "var(--text)" }} value={shipping} onChange={(event) => setShipping(event.target.value)}>
-            <option>Kerry Express</option>
-            <option>ไปรษณีย์ไทย EMS</option>
-          </select>
+          <div className="kw-choice-row" role="group" aria-label="เลือกวิธีจัดส่ง">
+            {["Kerry Express", "ไปรษณีย์ไทย EMS"].map((method) => <button key={method} type="button" className="kw-choice-button" aria-pressed={shipping === method} onClick={() => setShipping(method)}>{method}</button>)}
+          </div>
         </section>
 
         <section style={panel}>

@@ -331,10 +331,18 @@ func (r *neonOrderRepository) UpdateStatus(orderID string, fromStatus, toStatus 
 	}
 	defer tx.Rollback()
 	if toStatus == dto.OrderStatusCancelled {
+		// Serialize cancellation with payment creation/retry on the same order.
+		var lockedStatus dto.OrderStatus
+		if err = tx.QueryRow(`SELECT status FROM orders WHERE order_id = $1 FOR UPDATE`, orderID).Scan(&lockedStatus); err != nil {
+			return err
+		}
+		if lockedStatus != fromStatus {
+			return fmt.Errorf("order %s status changed concurrently", orderID)
+		}
 		var paymentID string
 		err = tx.QueryRow(`
 			SELECT payment_id::text FROM payments
-			WHERE order_id = $1 AND status = 'pending' AND provider_session_id IS NOT NULL
+			WHERE order_id = $1 AND status = 'pending'
 			FOR UPDATE`, orderID).Scan(&paymentID)
 		if err == nil {
 			return port.ErrActiveStripeCheckout
