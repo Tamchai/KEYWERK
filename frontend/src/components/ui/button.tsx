@@ -8,7 +8,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-[var(--accent)] text-[#18140a] hover:bg-[#ffd75a]",
+        default: "bg-[var(--accent)] text-[var(--on-accent)]",
         outline: "border border-[var(--line)] bg-transparent text-[var(--text)] hover:bg-white/5",
         destructive: "bg-[#dc4c45] text-white hover:bg-[#ef625a]",
       },
@@ -19,6 +19,6 @@ const buttonVariants = cva(
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>;
 
-export function Button({ className, variant, ...props }: ButtonProps) {
-  return <button className={cn(buttonVariants({ variant }), className)} {...props} />;
+export function Button({ className, variant = "default", ...props }: ButtonProps) {
+  return <button className={cn("kw-ui-button", buttonVariants({ variant }), className)} data-variant={variant} {...props} />;
 }

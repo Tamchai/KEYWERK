@@ -46,14 +46,13 @@ func CloseNeon() error {
 
 func OpenConfiguredDatabase() (*sqlx.DB, error) {
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s channel_binding=%s TimeZone=%s connect_timeout=%d statement_timeout=%d",
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s connect_timeout=%d statement_timeout=%d",
 		viper.GetString("database.neon.host"),
 		viper.GetString("database.neon.user"),
 		viper.GetString("database.neon.password"),
 		viper.GetString("database.neon.name"),
 		viper.GetInt("database.neon.port"),
 		viper.GetString("database.neon.sslmode"),
-		viper.GetString("database.neon.channel_binding"),
 		viper.GetString("database.neon.timezone"),
 		viper.GetInt("database.neon.connect_timeout_seconds"),
 		viper.GetInt("database.neon.statement_timeout_milliseconds"),

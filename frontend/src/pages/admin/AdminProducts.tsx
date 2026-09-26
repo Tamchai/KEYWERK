@@ -216,8 +216,9 @@ export const AdminProducts = () => {
         }
       >
         <form id="product-form" onSubmit={handleSubmit}>
-          <label style={labelStyle}>ชื่อสินค้า *</label>
+          <label htmlFor="product-name" style={labelStyle}>ชื่อสินค้า *</label>
           <input
+            id="product-name"
             required
             value={form.product_name}
             onChange={(e) => setForm((f) => ({ ...f, product_name: e.target.value }))}
@@ -225,8 +226,9 @@ export const AdminProducts = () => {
             style={fieldStyle}
           />
 
-          <label style={labelStyle}>หมวดหมู่ *</label>
+          <label htmlFor="product-category" style={labelStyle}>หมวดหมู่ *</label>
           <select
+            id="product-category"
             required
             value={form.category_id}
             onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}
@@ -240,8 +242,9 @@ export const AdminProducts = () => {
             ))}
           </select>
 
-          <label style={labelStyle}>แบรนด์ *</label>
+          <label htmlFor="product-brand" style={labelStyle}>แบรนด์ *</label>
           <select
+            id="product-brand"
             required
             value={form.brand_id}
             onChange={(e) => setForm((f) => ({ ...f, brand_id: e.target.value }))}
@@ -255,8 +258,9 @@ export const AdminProducts = () => {
             ))}
           </select>
 
-          <label style={labelStyle}>คำอธิบาย</label>
+          <label htmlFor="product-description" style={labelStyle}>คำอธิบาย</label>
           <textarea
+            id="product-description"
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
             rows={3}

@@ -41,7 +41,7 @@ export default function Orders() {
 
     <div className="mb-5 flex items-center justify-between gap-6 border-b border-[var(--line)] pb-4">
       <div className="flex items-center gap-2" role="group" aria-label="กรองสถานะคำสั่งซื้อ">
-        {filters.map((item) => <button key={item.value} type="button" onClick={() => setFilter(item.value)} className={cn("!rounded-xl !border-transparent !bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--text-dim)]", filter === item.value && "!border-[var(--line-bright)] !bg-[var(--accent-soft)] !text-[var(--accent)]")}>
+        {filters.map((item) => <button key={item.value} type="button" aria-pressed={filter === item.value} onClick={() => setFilter(item.value)} className={cn("!rounded-xl !border-transparent !bg-transparent px-4 py-2.5 text-sm font-semibold text-[var(--text-dim)]", filter === item.value && "!border-[var(--line-bright)] !bg-[var(--accent-soft)] !text-[var(--accent)]")}>
           {item.label}<span className="ml-2 opacity-70">{item.value === "all" ? allOrders.length : allOrders.filter((order) => order.status === item.value).length}</span>
         </button>)}
       </div>

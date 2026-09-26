@@ -112,7 +112,7 @@ export default function OrderDetail() {
             updateAddress.mutate(addressForm, { onSuccess: () => setAddressForm(null) });
           }} style={{ marginTop: 16 }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 10 }}>
-              {addressFields.map(([key, label]) => <input key={key} required={key !== "address_line2"} style={input} placeholder={label} value={String(addressForm[key])} onChange={(event) => setAddressField(key, event.target.value)} />)}
+              {addressFields.map(([key, label]) => <input key={key} aria-label={label} required={key !== "address_line2"} style={input} placeholder={label} value={String(addressForm[key])} onChange={(event) => setAddressField(key, event.target.value)} />)}
             </div>
             <button type="submit" style={button} disabled={updateAddress.isPending}>บันทึกที่อยู่</button>
             <button type="button" style={{ marginLeft: 10 }} onClick={() => setAddressForm(null)}>ยกเลิก</button>

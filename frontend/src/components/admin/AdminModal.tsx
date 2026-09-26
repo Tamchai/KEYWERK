@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode } from "react";
 
 interface AdminModalProps {
   open: boolean;
@@ -11,6 +11,12 @@ interface AdminModalProps {
 const overlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
+  width: "100vw",
+  height: "100vh",
+  maxWidth: "none",
+  maxHeight: "none",
+  margin: 0,
+  border: 0,
   background: "rgba(4,5,3,0.76)",
   backdropFilter: "blur(10px)",
   display: "flex",
@@ -32,10 +38,18 @@ const cardStyle: CSSProperties = {
 };
 
 export const AdminModal = ({ open, title, onClose, footer, children }: AdminModalProps) => {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!open || !dialog) return;
+    dialog.showModal();
+    return () => dialog.close();
+  }, [open]);
   if (!open) return null;
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
+    <dialog ref={dialogRef} aria-labelledby={titleId} style={overlayStyle} onCancel={(event) => { event.preventDefault(); onClose(); }} onClick={onClose}>
       <div style={cardStyle} onClick={(e) => e.stopPropagation()}>
         <div
           style={{
@@ -46,6 +60,7 @@ export const AdminModal = ({ open, title, onClose, footer, children }: AdminModa
           }}
         >
           <h2
+            id={titleId}
             style={{
               margin: 0,
               fontFamily: "var(--font-sans)",
@@ -88,6 +103,6 @@ export const AdminModal = ({ open, title, onClose, footer, children }: AdminModa
           </div>
         )}
       </div>
-    </div>
+    </dialog>
   );
 };

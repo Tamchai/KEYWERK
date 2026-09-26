@@ -23,7 +23,6 @@ database:
     port: 5432
     sslmode: require
     timezone: Asia/Bangkok
-    channel_binding: require
     connect_timeout_seconds: 10
     statement_timeout_milliseconds: 10000
     max_open_connections: 10

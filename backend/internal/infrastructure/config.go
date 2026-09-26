@@ -23,7 +23,6 @@ func InitConfig() error {
 	viper.SetDefault("system.timezone", "Asia/Bangkok")
 	viper.SetDefault("database.neon.port", 5432)
 	viper.SetDefault("database.neon.sslmode", "require")
-	viper.SetDefault("database.neon.channel_binding", "require")
 	viper.SetDefault("database.neon.timezone", "Asia/Bangkok")
 	viper.SetDefault("database.neon.connect_timeout_seconds", 10)
 	viper.SetDefault("database.neon.statement_timeout_milliseconds", 10000)

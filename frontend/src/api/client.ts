@@ -27,6 +27,10 @@ const knownMessages: Array<[RegExp, string]> = [
   [/not found/i, "ไม่พบข้อมูลที่ต้องการ"],
   [/invalid .*id|must be a uuid/i, "รหัสข้อมูลไม่ถูกต้อง"],
   [/invalid order status|cannot change order status/i, "ไม่สามารถเปลี่ยนเป็นสถานะที่เลือกได้"],
+  [/cannot cancel while Stripe|cannot cancel an order while Stripe/i, "ยังยกเลิกไม่ได้ขณะรอผลการชำระเงินจาก Stripe"],
+  [/paid orders require a refund/i, "คำสั่งซื้อนี้ชำระแล้ว ต้องดำเนินการคืนเงินก่อนยกเลิก"],
+  [/only pending orders can be cancelled/i, "ยกเลิกได้เฉพาะคำสั่งซื้อที่ยังรอดำเนินการ"],
+  [/order status changed|payment status changed/i, "สถานะเปลี่ยนแล้ว กรุณาโหลดข้อมูลใหม่และลองอีกครั้ง"],
   [/required|incomplete|invalid request/i, "กรุณาตรวจสอบข้อมูลที่กรอก"],
 ];
 

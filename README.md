@@ -188,7 +188,9 @@ CVC:         เลข 3 หลักใดก็ได้
 
 ## API Documentation
 
-สเปก API ปัจจุบันอยู่ที่ [`backend/openapi.yaml`](backend/openapi.yaml) ครอบคลุม 31 paths และ 50 operations
+สเปก API ปัจจุบันอยู่ที่ [`backend/openapi.yaml`](backend/openapi.yaml) ครอบคลุม 32 paths และ 51 operations
+
+ลูกค้ายกเลิกคำสั่งซื้อของตัวเองผ่าน `POST /orders/{orderID}/cancel` ได้เมื่อ order เป็น `pending` และไม่มี payment หรือ payment เป็น `failed` ระบบคืน stock และปรับยอดขายใน transaction เดียว การยกเลิกขณะ payment เป็น `pending` หรือหลังจ่ายเงินแล้วไม่อยู่ใน flow นี้ เพราะต้องจัดการ Checkout Session หรือ refund เพิ่มเติม
 
 Base URL สำหรับ local development:
 
@@ -197,6 +199,8 @@ http://localhost:8080/api/v1
 ```
 
 ## คำสั่งตรวจสอบคุณภาพ
+
+ขั้นตอน acceptance tests บนฐานข้อมูลแยกและผลตรวจล่าสุดอยู่ใน [`VERIFICATION.md`](VERIFICATION.md)
 
 Frontend:
 

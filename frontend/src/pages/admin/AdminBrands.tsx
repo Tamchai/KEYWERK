@@ -178,8 +178,9 @@ export const AdminBrands = () => {
         }
       >
         <form id="brand-form" onSubmit={handleSubmit}>
-          <label style={labelStyle}>ชื่อแบรนด์</label>
+          <label htmlFor="brand-name" style={labelStyle}>ชื่อแบรนด์</label>
           <input
+            id="brand-name"
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}

@@ -66,6 +66,7 @@ export const ImageUploader = ({ imageId, imageUrl, onUploaded }: ImageUploaderPr
       <input
         ref={inputRef}
         type="file"
+        aria-label="รูปสินค้า"
         accept="image/jpeg,image/png,image/webp"
         hidden
         onChange={(e) => { void handleSelect(e.target.files?.[0]); e.target.value = ""; }}

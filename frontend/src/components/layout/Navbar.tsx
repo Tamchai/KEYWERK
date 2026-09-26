@@ -300,6 +300,10 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
       />
 
       <div
+        inert={!open}
+        aria-hidden={!open}
+        role="dialog"
+        aria-label="ค้นหาสินค้า"
         style={{
           position: "fixed",
           top: 0,
@@ -328,6 +332,7 @@ const SearchPanel = memo(({ open, onClose }: SearchPanelProps) => {
             </span>
             <input
               ref={inputRef}
+              aria-label="ค้นหาสินค้า"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

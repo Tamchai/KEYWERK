@@ -85,12 +85,12 @@ function Profile() {
                   <span className="absolute inset-0 grid place-items-center bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"><Camera size={24} /></span>
                 </button>
                 <span className="absolute -bottom-1 -right-1 grid h-7 w-7 place-items-center rounded-full border-2 border-[var(--surface)] bg-[var(--accent)] text-[#171208]"><Camera size={14} /></span>
-                <input ref={fileInputRef} className="sr-only" type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { handleImage(event.target.files?.[0]); event.target.value = ""; }} />
+                <input ref={fileInputRef} className="sr-only" type="file" aria-label="รูปโปรไฟล์" accept="image/jpeg,image/png,image/webp" onChange={(event) => { handleImage(event.target.files?.[0]); event.target.value = ""; }} />
               </div>
               <div className="min-w-0 flex-1">
                 <span className="kw-profile-status"><ShieldCheck size={15} /> บัญชีที่ยืนยันแล้ว</span>
                 {editingName ? <form className="flex max-w-md items-center gap-2" onSubmit={handleNameSubmit}>
-                  <input autoFocus maxLength={120} className="min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-base outline-none focus:border-[var(--accent)]" value={name} onChange={(event) => setName(event.target.value)} />
+                  <input autoFocus aria-label="ชื่อที่แสดง" maxLength={120} className="min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-base outline-none focus:border-[var(--accent)]" value={name} onChange={(event) => setName(event.target.value)} />
                   <Button className="h-10 w-10 p-0" type="submit" disabled={saveProfile.isPending} aria-label="บันทึกชื่อ"><Check size={18} /></Button>
                 </form> : <div className="flex items-center gap-2"><h2>{profile?.name || "สมาชิก KEYWERK"}</h2><button className="border-0 bg-transparent p-1 text-[var(--text-dim)] hover:text-[var(--accent)]" type="button" onClick={() => setEditingName(true)} aria-label="แก้ไขชื่อ"><Pencil size={16} /></button></div>}
                 <p className="truncate">{displayEmail}</p>

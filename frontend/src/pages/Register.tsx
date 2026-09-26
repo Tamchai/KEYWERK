@@ -36,14 +36,14 @@ function Register() {
         <Link to="/" style={logoStyle}>⌨ KEYWERK</Link>
         <h1 style={{ textAlign: "center" }}>สมัครสมาชิก</h1>
         <form onSubmit={handleSubmit}>
-          <label style={labelStyle}>ชื่อ</label>
-          <input autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required style={inputStyle} />
-          <label style={labelStyle}>อีเมล</label>
-          <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={inputStyle} />
-          <label style={labelStyle}>รหัสผ่าน</label>
-          <input type="password" autoComplete="new-password" minLength={4} value={password} onChange={(event) => setPassword(event.target.value)} required style={inputStyle} />
-          <label style={labelStyle}>ยืนยันรหัสผ่าน</label>
-          <input type="password" autoComplete="new-password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required style={inputStyle} />
+          <label htmlFor="register-name" style={labelStyle}>ชื่อ</label>
+          <input id="register-name" autoComplete="name" value={name} onChange={(event) => setName(event.target.value)} required style={inputStyle} />
+          <label htmlFor="register-email" style={labelStyle}>อีเมล</label>
+          <input id="register-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={inputStyle} />
+          <label htmlFor="register-password" style={labelStyle}>รหัสผ่าน</label>
+          <input id="register-password" type="password" autoComplete="new-password" minLength={4} value={password} onChange={(event) => setPassword(event.target.value)} required style={inputStyle} />
+          <label htmlFor="register-confirm" style={labelStyle}>ยืนยันรหัสผ่าน</label>
+          <input id="register-confirm" type="password" autoComplete="new-password" minLength={4} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} required style={inputStyle} />
           {error ? <p role="alert" style={{ color: "#e85d5d" }}>{error}</p> : null}
           <button type="submit" disabled={submitting} style={submitStyle}>{submitting ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}</button>
         </form>
@@ -57,6 +57,6 @@ const pageStyle: CSSProperties = { minHeight: "100vh", display: "flex", alignIte
 const logoStyle: CSSProperties = { display: "block", marginBottom: 28, textAlign: "center", color: "var(--text)", textDecoration: "none", fontWeight: 800, fontFamily: "var(--font-sans)", fontSize: 20 };
 const labelStyle: CSSProperties = { display: "block", marginBottom: 6, color: "var(--text-dim)" };
 const inputStyle: CSSProperties = { width: "100%", padding: "12px 14px", marginBottom: 14, borderRadius: 8, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", boxSizing: "border-box" };
-const submitStyle: CSSProperties = { width: "100%", padding: 13, marginTop: 8, border: 0, borderRadius: 8, background: "var(--accent)", color: "#1c1810", fontWeight: 800, cursor: "pointer" };
+const submitStyle: CSSProperties = { width: "100%", padding: 13, marginTop: 8, border: 0, borderRadius: 8, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, cursor: "pointer" };
 
 export default Register;

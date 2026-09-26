@@ -98,14 +98,16 @@ frontend/src/
 
 | Token | ค่า | การใช้งาน |
 | --- | --- | --- |
-| `--bg` | `#0e0c08` | พื้นหลังหลัก |
-| `--bg-alt` | `#17140d` | พื้นหลังรอง |
-| `--surface` | `#1f1b12` | Card และ modal |
-| `--surface-top` | `#292319` | Elevated surface |
-| `--line` | `#35301f` | Border และ divider |
-| `--text` | `#f2ede0` | ข้อความหลัก |
-| `--text-dim` | `#a89f8a` | ข้อความรอง |
-| `--accent` | `#e8b923` | Brand accent |
+| `--bg` | `#090a08` | พื้นหลังหลัก |
+| `--bg-alt` | `#10110e` | พื้นหลังรอง |
+| `--surface` | `#171814` | Card และ modal |
+| `--surface-top` | `#20221c` | Elevated surface |
+| `--line` | `#303228` | Border และ divider |
+| `--text` | `#f4f1e8` | ข้อความหลัก |
+| `--text-dim` | `#a6a28f` | ข้อความรอง |
+| `--accent` | `#f2c230` | Brand accent |
+
+Light mode ใช้พื้นหลัง `#f1f2ef`, surface `#ffffff`, ข้อความ `#20251e` และ accent `#916307` โดย `--on-accent` เปลี่ยนตามธีมเพื่อให้ปุ่มอ่านชัด สถานะใช้ semantic tokens แยก waiting (amber), processing (blue), paid/shipped (green) และ failed/cancelled (red) พร้อมข้อความสถานะที่ไม่อาศัยสีอย่างเดียว
 
 ### Frontend development flow
 
@@ -189,7 +191,7 @@ backend/
 - API prefix: `/api/v1`
 - JWT Bearer token ใช้กับ profile, address, cart, order และ payment routes
 - Admin routes ตรวจทั้ง JWT และ claim `user_role=admin`
-- OpenAPI ปัจจุบันมี 30 paths และ 49 operations
+- OpenAPI ปัจจุบันมี 32 paths และ 51 operations รวม payment reconciliation และ customer cancellation
 - Error response ภายนอกส่งเฉพาะข้อความที่ปลอดภัย ไม่เปิดเผย internal error
 
 ### Database และ migrations
@@ -235,6 +237,8 @@ Backend verifies signature and updates payment/order atomically
 - Webhook event ถูกประมวลผลแบบ idempotent
 - หน้า payment success ไม่สามารถเปลี่ยนสถานะเป็น `paid` เอง
 - Admin verification เป็น operational fallback ไม่ใช่ payment flow หลัก
+- หาก webhook ล่าช้า backend ตรวจ Checkout Session กับ Stripe โดยตรง ผ่าน authenticated reconciliation endpoint และตรวจ session/metadata ก่อนบันทึกสถานะ
+- ลูกค้ายกเลิกได้เฉพาะ order ของตัวเองที่เป็น `pending` และไม่มี payment หรือ payment เป็น `failed`; cancellation คืน stock และปรับ sold count แบบ transaction ส่วน active payment และ refund ยังไม่รองรับ
 
 ## Infrastructure สำหรับ Local Development
 
@@ -287,3 +291,5 @@ go vet ./...
 ```
 
 รายละเอียดการติดตั้งและรันระบบอยู่ใน [`README.md`](README.md) และ API contract อยู่ใน [`backend/openapi.yaml`](backend/openapi.yaml)
+
+หลักฐาน acceptance tests และวิธีตรวจ desktop/Stripe กับฐานข้อมูลแยกอยู่ใน [`VERIFICATION.md`](VERIFICATION.md)

@@ -286,8 +286,9 @@ export const AdminProductVariants = () => {
         }
       >
         <form id="variant-form" onSubmit={handleSubmit}>
-          <label style={labelStyle}>สินค้า *</label>
+          <label htmlFor="variant-product" style={labelStyle}>สินค้า *</label>
           <select
+            id="variant-product"
             required
             value={form.product_id}
             onChange={(e) => setForm((f) => ({ ...f, product_id: e.target.value }))}
@@ -301,8 +302,9 @@ export const AdminProductVariants = () => {
             ))}
           </select>
 
-          <label style={labelStyle}>ชื่อ variant / SKU *</label>
+          <label htmlFor="variant-name" style={labelStyle}>ชื่อ variant / SKU *</label>
           <input
+            id="variant-name"
             required
             value={form.variant_name}
             onChange={(e) => setForm((f) => ({ ...f, variant_name: e.target.value }))}
@@ -312,8 +314,9 @@ export const AdminProductVariants = () => {
 
           <div style={{ display: "flex", gap: 12 }}>
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>ราคา (บาท) *</label>
+              <label htmlFor="variant-price" style={labelStyle}>ราคา (บาท) *</label>
               <input
+                id="variant-price"
                 required
                 type="number"
                 min="0.01"
@@ -324,8 +327,9 @@ export const AdminProductVariants = () => {
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>สต็อก</label>
+              <label htmlFor="variant-stock" style={labelStyle}>สต็อก</label>
               <input
+                id="variant-stock"
                 type="number"
                 min="0"
                 value={form.stock}
@@ -335,8 +339,9 @@ export const AdminProductVariants = () => {
             </div>
           </div>
 
-          <label style={labelStyle}>คุณสมบัติ (JSON)</label>
+          <label htmlFor="variant-attributes" style={labelStyle}>คุณสมบัติ (JSON)</label>
           <textarea
+            id="variant-attributes"
             value={form.attributes}
             onChange={(e) => setForm((f) => ({ ...f, attributes: e.target.value }))}
             placeholder={'เช่น\n{"color":"Concrete Edition","layout":"75%","language":"English"}'}

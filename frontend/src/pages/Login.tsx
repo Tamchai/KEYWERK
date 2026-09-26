@@ -37,10 +37,10 @@ function Login() {
         <Link to="/" style={logoStyle}>⌨ KEYWERK</Link>
         <h1 style={{ textAlign: "center" }}>เข้าสู่ระบบ</h1>
         <form onSubmit={handleSubmit}>
-          <label style={labelStyle}>อีเมล</label>
-          <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={inputStyle} />
-          <label style={labelStyle}>รหัสผ่าน</label>
-          <input type="password" autoComplete="current-password" minLength={4} value={password} onChange={(event) => setPassword(event.target.value)} required style={inputStyle} />
+          <label htmlFor="login-email" style={labelStyle}>อีเมล</label>
+          <input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required style={inputStyle} />
+          <label htmlFor="login-password" style={labelStyle}>รหัสผ่าน</label>
+          <input id="login-password" type="password" autoComplete="current-password" minLength={4} value={password} onChange={(event) => setPassword(event.target.value)} required style={inputStyle} />
           {error ? <p role="alert" style={{ color: "#e85d5d" }}>{error}</p> : null}
           <button type="submit" disabled={submitting} style={submitStyle}>{submitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}</button>
         </form>
@@ -54,6 +54,6 @@ const pageStyle: CSSProperties = { minHeight: "100vh", display: "flex", alignIte
 const logoStyle: CSSProperties = { display: "block", marginBottom: 28, textAlign: "center", color: "var(--text)", textDecoration: "none", fontWeight: 800, fontFamily: "var(--font-sans)", fontSize: 20 };
 const labelStyle: CSSProperties = { display: "block", marginBottom: 6, color: "var(--text-dim)" };
 const inputStyle: CSSProperties = { width: "100%", padding: "12px 14px", marginBottom: 14, borderRadius: 8, border: "1px solid var(--line)", background: "var(--surface)", color: "var(--text)", boxSizing: "border-box" };
-const submitStyle: CSSProperties = { width: "100%", padding: 13, marginTop: 8, border: 0, borderRadius: 8, background: "var(--accent)", color: "#1c1810", fontWeight: 800, cursor: "pointer" };
+const submitStyle: CSSProperties = { width: "100%", padding: 13, marginTop: 8, border: 0, borderRadius: 8, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, cursor: "pointer" };
 
 export default Login;

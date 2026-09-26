@@ -178,8 +178,9 @@ export const AdminCategories = () => {
         }
       >
         <form id="category-form" onSubmit={handleSubmit}>
-          <label style={labelStyle}>ชื่อหมวดหมู่</label>
+          <label htmlFor="category-name" style={labelStyle}>ชื่อหมวดหมู่</label>
           <input
+            id="category-name"
             required
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
