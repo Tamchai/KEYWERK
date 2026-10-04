@@ -1,10 +1,10 @@
 # KEYWERK — Acceptance Verification
 
-ตรวจล่าสุด: 26 กันยายน 2026 บน Windows, Chrome headless, PostgreSQL 17 แยกสำหรับทดสอบ และ SeaweedFS ในเครื่อง การทดสอบนี้ไม่ reset DB ที่ผู้ใช้ใช้งานอยู่ ไม่ deploy และไม่ตรวจ mobile
+บันทึกผลการตรวจวันที่ 26 กันยายน 2026 บน Windows, Chrome headless, PostgreSQL 17 แยกสำหรับทดสอบ และ SeaweedFS ในเครื่อง การทดสอบนี้ไม่ reset DB ที่ผู้ใช้ใช้งานอยู่ ไม่ deploy และไม่ตรวจ mobile สคริปต์ acceptance test ที่ใช้ในรอบนั้นถูกนำออกจาก repository แล้ว จึงไม่ใช่ขั้นตอนทดสอบที่รันซ้ำได้จากไฟล์นี้
 
 ## ขอบเขตและหลักฐาน
 
-`scripts/verify-local.mjs` ตรวจ browser และ API กับ backend จริง ไม่ mock ข้อมูล catalog, cart, order, stock หรือ storage โดยเริ่มจาก catalog และรายการธุรกรรมที่ว่าง มีเฉพาะ development admin และหมวดหมู่จาก migrations
+การตรวจรอบนั้นใช้ browser และ API กับ backend จริง ไม่ mock ข้อมูล catalog, cart, order, stock หรือ storage โดยเริ่มจาก catalog และรายการธุรกรรมที่ว่าง มีเฉพาะ development admin และหมวดหมู่จาก migrations
 
 ผลละเอียดและภาพหน้าจอเก็บใน `.verification/` ซึ่งถูก ignore ไม่เก็บ token, Stripe secret หรือ config ลงรายงาน
 
@@ -26,59 +26,11 @@
 
 การตรวจ labels, named buttons, viewport overflow และ keyboard focus เป็น focused acceptance check ไม่ใช่การรับรอง WCAG ทั้งเว็บไซต์
 
-## วิธีรันกับฐานข้อมูลแยก
+## หมายเหตุเกี่ยวกับผลทดสอบ
 
-ต้องมี Docker, Go, Node.js, Chrome และ Stripe test-mode config ใน `backend/config.yaml` ที่ถูก ignore ต้องเริ่มด้วย DB สำหรับทดสอบที่ไม่มี products; script จะหยุดก่อนสร้าง fixture หาก catalog ไม่ว่าง
+ผลในตารางเป็นหลักฐานย้อนหลัง ไม่ใช่สถานะ CI ที่รันอัตโนมัติในปัจจุบัน การทดสอบ Stripe ใช้ test card และ event จริงจาก Stripe ที่ส่งเข้า local webhook handler พร้อมตรวจ duplicate และ invalid signature แต่ไม่ได้ยืนยันว่า Stripe ส่ง webhook ผ่านอินเทอร์เน็ตถึงเครื่องโดยอัตโนมัติ สำหรับการรับ event ในเครื่องยังต้องใช้ Stripe CLI ตาม README
 
-จาก root ให้เริ่ม PostgreSQL ชั่วคราวและ SeaweedFS:
-
-```powershell
-docker run --detach --name keywerk-acceptance-db --publish 127.0.0.1:55432:5432 --env POSTGRES_USER=keywerk_test --env POSTGRES_PASSWORD=keywerk_local_test --env POSTGRES_DB=keywerk_acceptance postgres:17-alpine
-docker compose -f backend/docker-compose.yml up -d
-```
-
-เปิด terminal สำหรับ backend:
-
-```powershell
-cd backend
-$env:DATABASE_NEON_HOST='127.0.0.1'
-$env:DATABASE_NEON_USER='keywerk_test'
-$env:DATABASE_NEON_PASSWORD='keywerk_local_test'
-$env:DATABASE_NEON_NAME='keywerk_acceptance'
-$env:DATABASE_NEON_PORT='55432'
-$env:DATABASE_NEON_SSLMODE='disable'
-go run ./cmd
-```
-
-เปิดอีก terminal สำหรับ frontend:
-
-```powershell
-cd frontend
-npm run dev -- --host 127.0.0.1
-```
-
-ติดตั้ง test runner แยกจาก application dependencies แล้วรันจาก root:
-
-```powershell
-npm install --prefix .verification/runner --no-package-lock playwright@1.63.0
-$env:PLAYWRIGHT_MODULE_PATH=(Join-Path (Get-Location) '.verification/runner/node_modules/playwright')
-$env:VERIFY_STRIPE='1'
-node scripts/verify-local.mjs
-```
-
-หากไม่ได้ตั้ง `VERIFY_STRIPE=1` รายการ Stripe จะเป็น `unavailable` ไม่ใช่ `pass` Script ใช้ Stripe test card และสร้างธุรกรรมทดสอบจริงในบัญชี test mode
-
-Signed event replay ดึง event จาก Stripe แล้วลงลายเซ็นด้วย webhook secret ของ local config เพื่อส่งเข้า HTTP webhook handler และตรวจ idempotency วิธีนี้ทดสอบ handler กับ event จริง แต่ไม่ยืนยันการส่ง webhook จาก Stripe ผ่านอินเทอร์เน็ตมาถึงเครื่อง สำหรับการรับ event อัตโนมัติใน local ใช้ Stripe CLI ตาม README
-
-เมื่อจบทดสอบ ให้หยุด backend/frontend ที่เปิดไว้ แล้วลบเฉพาะ container ฐานข้อมูลชั่วคราว:
-
-```powershell
-docker stop keywerk-acceptance-db
-docker rm keywerk-acceptance-db
-docker compose -f backend/docker-compose.yml stop
-```
-
-ไม่ลบ volume ของ SeaweedFS เพื่อรักษารูปเดิม รอบที่บันทึกผลนี้ได้คืนสถานะ services และลบ DB ชั่วคราวหลังตรวจเสร็จแล้ว
+หากต้องทดสอบ flow แบบ end-to-end อีกครั้ง ให้ใช้ฐานข้อมูลทดสอบแยกจากข้อมูลจริง และสร้างขั้นตอนทดสอบใหม่ก่อน เพราะไม่มี acceptance runner ใน repository แล้ว คำสั่ง unit test, lint และ build ปัจจุบันอยู่ใน README
 
 ## ข้อจำกัดที่ตั้งใจคงไว้
 

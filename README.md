@@ -2,6 +2,8 @@
 
 เว็บ E-Commerce สำหรับคีย์บอร์ด Mechanical/Magnetic, Keycaps, Switches และอุปกรณ์เสริม ประกอบด้วยหน้าร้านสำหรับลูกค้า ระบบตะกร้าและคำสั่งซื้อ การชำระเงินผ่าน Stripe Checkout และ Dashboard สำหรับผู้ดูแลระบบ
 
+หากต้องการอ่านว่า backend ทำงานอย่างไร เริ่มที่ [คู่มือ Backend](backend/README.md) แล้วเปิด [พจนานุกรมฟังก์ชัน](backend/FUNCTIONS.md) เพื่อค้นชื่อฟังก์ชันทีละตัว
+
 > โปรเจกต์นี้ตั้งค่าสำหรับการพัฒนาและทดสอบในเครื่อง ยังไม่มีขั้นตอน deploy production
 
 ## ความสามารถหลัก
@@ -200,7 +202,7 @@ http://localhost:8080/api/v1
 
 ## คำสั่งตรวจสอบคุณภาพ
 
-ขั้นตอน acceptance tests บนฐานข้อมูลแยกและผลตรวจล่าสุดอยู่ใน [`VERIFICATION.md`](VERIFICATION.md)
+ผล acceptance tests รอบก่อนเก็บไว้ใน [`VERIFICATION.md`](VERIFICATION.md) โดยสคริปต์ที่ใช้ตรวจรอบนั้นถูกนำออกแล้ว
 
 Frontend:
 

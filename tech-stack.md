@@ -292,4 +292,4 @@ go vet ./...
 
 รายละเอียดการติดตั้งและรันระบบอยู่ใน [`README.md`](README.md) และ API contract อยู่ใน [`backend/openapi.yaml`](backend/openapi.yaml)
 
-หลักฐาน acceptance tests และวิธีตรวจ desktop/Stripe กับฐานข้อมูลแยกอยู่ใน [`VERIFICATION.md`](VERIFICATION.md)
+บันทึกผล acceptance tests รอบก่อนอยู่ใน [`VERIFICATION.md`](VERIFICATION.md); สคริปต์ end-to-end ที่ใช้รอบนั้นถูกนำออกแล้ว
