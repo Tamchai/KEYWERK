@@ -2,7 +2,7 @@
 
 เอกสารนี้อธิบาย **โค้ดที่มีอยู่จริง** ใน `backend/` เพื่อให้ไล่จากคำขอของเว็บไปถึงฐานข้อมูลและบริการภายนอกได้ ไม่ใช่บันทึกว่าใครเขียนไฟล์ไหน: Git ไม่พอบอกความเป็นเจ้าของของโค้ดแต่ละบรรทัดอย่างน่าเชื่อถือ
 
-ถ้าต้องการค้นหน้าที่ของฟังก์ชันตามชื่อ เปิด [FUNCTIONS.md](FUNCTIONS.md) คำจำกัดความของ Product, Variant, Order และ Payment อธิบายไว้ในหัวข้อด้านล่าง ส่วนสัญญา API และรูปแบบ request/response ดู [openapi.yaml](openapi.yaml)
+คำจำกัดความของ Product, Variant, Order และ Payment อธิบายไว้ในหัวข้อด้านล่าง ส่วนสัญญา API และรูปแบบ request/response ดู [openapi.yaml](openapi.yaml)
 
 ## เริ่มอ่านจากตรงไหน
 
@@ -75,5 +75,3 @@ Manual fallback นี้เป็นการเปลี่ยนสถาน�
 2. อ่าน handler ว่ารับ field/ID จากที่ไหน แล้วอ่าน service ว่าเช็กกฎและสิทธิ์อะไร
 3. อ่าน repository/gateway ก่อนเปลี่ยนกฎที่เกี่ยวกับ DB transaction, Stripe หรือไฟล์
 4. เปลี่ยน DTO และ OpenAPI เมื่อรูปแบบข้อมูลเปลี่ยน แล้วรัน `go test ./...` และ `go vet ./...`
-
-คู่มือชื่อฟังก์ชันฉบับละเอียด: [FUNCTIONS.md](FUNCTIONS.md)

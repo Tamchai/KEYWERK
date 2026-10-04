@@ -2,7 +2,7 @@
 
 เว็บ E-Commerce สำหรับคีย์บอร์ด Mechanical/Magnetic, Keycaps, Switches และอุปกรณ์เสริม ประกอบด้วยหน้าร้านสำหรับลูกค้า ระบบตะกร้าและคำสั่งซื้อ การชำระเงินผ่าน Stripe Checkout และ Dashboard สำหรับผู้ดูแลระบบ
 
-หากต้องการอ่านว่า backend ทำงานอย่างไร เริ่มที่ [คู่มือ Backend](backend/README.md) แล้วเปิด [พจนานุกรมฟังก์ชัน](backend/FUNCTIONS.md) เพื่อค้นชื่อฟังก์ชันทีละตัว
+หากต้องการอ่านว่า backend ทำงานอย่างไร เริ่มที่ [คู่มือ Backend](backend/README.md)
 
 > โปรเจกต์นี้ตั้งค่าสำหรับการพัฒนาและทดสอบในเครื่อง ยังไม่มีขั้นตอน deploy production
 
