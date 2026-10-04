@@ -2,7 +2,7 @@
 
 เอกสารนี้อธิบาย **โค้ดที่มีอยู่จริง** ใน `backend/` เพื่อให้ไล่จากคำขอของเว็บไปถึงฐานข้อมูลและบริการภายนอกได้ ไม่ใช่บันทึกว่าใครเขียนไฟล์ไหน: Git ไม่พอบอกความเป็นเจ้าของของโค้ดแต่ละบรรทัดอย่างน่าเชื่อถือ
 
-ถ้าต้องการค้นหน้าที่ของฟังก์ชันตามชื่อ เปิด [FUNCTIONS.md](FUNCTIONS.md) ส่วนคำจำกัดความของ Product, Variant, Order และ Payment อยู่ใน [CONTEXT.md](../CONTEXT.md) สัญญา API และรูปแบบ request/response ดู [openapi.yaml](openapi.yaml)
+ถ้าต้องการค้นหน้าที่ของฟังก์ชันตามชื่อ เปิด [FUNCTIONS.md](FUNCTIONS.md) คำจำกัดความของ Product, Variant, Order และ Payment อธิบายไว้ในหัวข้อด้านล่าง ส่วนสัญญา API และรูปแบบ request/response ดู [openapi.yaml](openapi.yaml)
 
 ## เริ่มอ่านจากตรงไหน
 

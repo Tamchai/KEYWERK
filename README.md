@@ -202,8 +202,6 @@ http://localhost:8080/api/v1
 
 ## คำสั่งตรวจสอบคุณภาพ
 
-ผล acceptance tests รอบก่อนเก็บไว้ใน [`VERIFICATION.md`](VERIFICATION.md) โดยสคริปต์ที่ใช้ตรวจรอบนั้นถูกนำออกแล้ว
-
 Frontend:
 
 ```powershell
